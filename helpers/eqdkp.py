@@ -1,5 +1,5 @@
 import re
-
+import os
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
@@ -14,7 +14,7 @@ cache = TTLCache(maxsize=100, ttl=180)
 def get_raw_data():
 
     # Get the HTML & Parse it
-    response = requests.get(config.POINTS_URL)
+    response = requests.get(os.environ['EQDKP_URL']+config.POINTS_URL)
     raw_html = BeautifulSoup(response.text, 'html.parser')
     overview_table_html = raw_html.find(name='table', class_='hptt')
     player_data_html = overview_table_html.find_all(name='span', attrs=config.EQDKP_SPAN_ATTRS)

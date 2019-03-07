@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 from discord.ext import commands
 
-from helpers import config, eqdkp
+from helpers import config, eqdkp, twapi
 
 # Configuring Pandas default options
 pd.set_option('display.max_rows', 25)
@@ -28,6 +28,19 @@ async def on_ready():
     print(bot.user.name)
     print(bot.user.id)
     print('----------')
+
+
+@bot.command()
+@commands.has_any_role('Admin', 'Raid Leader')
+async def tweet(ctx, *, message):
+    """
+    This command is only @Admin usable and it will create a Tweet to the batphone Twitter account
+    """
+    status = twapi.post_tweet(message)
+    await ctx.send(f"""```
+I just fucking tweeted!
+Status Update: {message}
+```""")
 
 
 @bot.command()

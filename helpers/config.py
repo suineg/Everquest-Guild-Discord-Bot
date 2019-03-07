@@ -1,7 +1,7 @@
 import re
 
-POINTS_URL = 'http://dkp.relentlessinsomnia.com/index.php/Points'
-API_URL = 'http://dkp.amtrakeq.com/api.php'
+POINTS_URL = 'index.php/Points'
+API_URL = 'api.php'
 
 EQDKP_COLUMNS = [
     'CHARACTER',
@@ -58,7 +58,7 @@ EQ_CLASS_SIMILARITIES = {
 }
 
 LAST_RUN = None
-SPAM_DELAY_IN_SECONDS = 15
+SPAM_DELAY_IN_SECONDS = 5
 
 INSULTS = [
     "Hey do me a favor shit-bag, stop spamming the channel!",
