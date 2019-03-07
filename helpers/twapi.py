@@ -1,10 +1,11 @@
-import twitter
 import os
+
+import twitter
 
 
 def post_tweet(s):
     api = twitter.Api(consumer_key=os.environ['TWITTER_CONSUMER_API_KEY'],
-                      consumer_secret=os.environ['TWITTER_CONSUMER_API_KEY_SECRET'],
+                      consumer_secret=os.environ['TWITTER_CONSUMER_API_SECRET_KEY'],
                       access_token_key=os.environ['TWITTER_ACCESS_TOKEN'],
                       access_token_secret=os.environ['TWITTER_ACCESS_TOKEN_SECRET'])
     try:
