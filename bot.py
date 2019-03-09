@@ -30,11 +30,14 @@ async def on_ready():
     print('----------')
 
 
+# TODO Learn how to separate commands into separate categories.
 @bot.command()
 @commands.has_any_role('Admin', 'Raid Leader')
 async def tweet(ctx, *, message):
     """
-    This command is only @Admin usable and it will create a Tweet to the batphone Twitter account
+    Send a tweet to the AmtrakEQ Twitter account.
+
+    Required: @Admin or @Raid Leader role
     """
     status = twapi.post_tweet(message)
     await ctx.send(f"""```
@@ -46,6 +49,8 @@ Status Update: {message}
 @bot.command()
 async def dkp(ctx, *filters):
     """
+    Get DKP Standings from EQDKP and Filter/Order as requested.
+
     Filters:
         1.) Each filter is designed as a key=value pairing.
         2.) Text filters will be set with = and can include a comma separated list for value
@@ -96,16 +101,25 @@ def parse_args(*s):
     arg_pairs = [re.split(r'(\W)', arg_pair, maxsplit=1) for arg_pair in s]
     try:
         for arg_pair in arg_pairs:
-            column = arg_pair[0].upper()
-            if column not in (config.EQDKP_COLUMNS + config.ADDITIONAL_FILTERS):
+
+            # Define the filter key
+            key = arg_pair[0].upper()
+            key = "CHARACTER" if key == "NAME" or key == "CHAR" else key
+
+            if key not in (config.EQDKP_COLUMNS + config.ADDITIONAL_FILTERS):
                 continue
+
             if arg_pair[1] not in operators and arg_pair[1] not in comparisons:
                 raise SyntaxError(''.join(arg_pair))
+
             if arg_pair[1] in operators:
                 value = re.split('|'.join(value_splits), arg_pair[2])
+
             else:
                 value = ' '.join(arg_pair[1:])
-            filters[column] = value
+
+            filters[key] = value
+
     except SyntaxError:
         pass
     finally:
