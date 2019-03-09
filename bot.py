@@ -41,7 +41,7 @@ async def tweet(ctx, *, message):
 Here comes the train bitches!
 Status Update: {message}
 ```""")
-    await bot.guilds.get(538499583832227850).channels.get(538500047575449600).send(f"@everyone {message}")
+    await bot.get_guild(538499583832227850).get_channel(538500047575449600).send(f"@everyone {message}")
 
 
 @bot.command()
