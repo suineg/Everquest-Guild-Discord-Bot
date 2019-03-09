@@ -3,31 +3,15 @@ import re
 POINTS_URL = 'index.php/Points'
 API_URL = 'api.php'
 
-EQDKP_COLUMNS = [
-    'CHARACTER',
-    'CLASS',
-    'DKP',
-    '30DAY',
-    '60DAY',
-    '90DAY'
-]
+EQ_RE_TELLS_YOU = r'^\[[a-zA-Z0-9: ]{24}\] (\w*?) tells you, \'(.*)\'$'
 
-ADDITIONAL_FILTERS = [
-    'ORDERBY',
-    'TOP'
-]
+EQDKP_COLUMNS = ['CHARACTER', 'CLASS', 'DKP', '30DAY', '60DAY', '90DAY']
 
-EQDKP_SPAN_ATTRS = {
-    'positive',
-    'negative',
-    'neutral',
-    re.compile('class_*')
-}
+ADDITIONAL_FILTERS = ['ORDERBY', 'TOP']
 
-INDEX_SORT = {
-    'DKP': False,
-    '30DAY': False
-}
+EQDKP_SPAN_ATTRS = {'positive', 'negative', 'neutral', re.compile('class_*')}
+
+INDEX_SORT = {'DKP': False, '30DAY': False}
 
 ORDER_BY_ASC_DEFAULTS = {
     'CHARACTER': True,

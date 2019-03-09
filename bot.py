@@ -34,16 +34,14 @@ async def on_ready():
 @bot.command()
 @commands.has_any_role('Admin', 'Raid Leader')
 async def tweet(ctx, *, message):
-    """
-    Send a tweet to the AmtrakEQ Twitter account.
+    """Send a tweet to the AmtrakEQ Twitter account. Required role: @Admin or @Raid Leader"""
 
-    Required: @Admin or @Raid Leader role
-    """
     status = twapi.post_tweet(message)
     await ctx.send(f"""```
-I just fucking tweeted!
+Here comes the train bitches!
 Status Update: {message}
 ```""")
+    await bot.guilds.get(538499583832227850).channels.get(538500047575449600).send(f"@everyone {message}")
 
 
 @bot.command()
