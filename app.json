@@ -9,13 +9,31 @@
   ],
   "description": "EverQuest Discord Bot",
   "env": {
-    "BOT_TOKEN": {
+    "DISCORD_BATPHONE_CHANNEL_ID": {
+      "required": true
+    },
+    "DISCORD_BOT_TOKEN": {
+      "required": true
+    },
+    "DISCORD_GUILD_ID": {
       "required": true
     },
     "EQDKP_API_TOKEN": {
       "required": true
     },
     "EQDKP_URL": {
+      "required": true
+    },
+    "TWITTER_ACCESS_TOKEN": {
+      "required": true
+    },
+    "TWITTER_ACCESS_TOKEN_SECRET": {
+      "required": true
+    },
+    "TWITTER_CONSUMER_API_KEY": {
+      "required": true
+    },
+    "TWITTER_CONSUMER_API_SECRET_KEY": {
       "required": true
     }
   },

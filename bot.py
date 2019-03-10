@@ -41,7 +41,10 @@ async def tweet(ctx, *, message):
 Here comes the train bitches!
 Status Update: {message}
 ```""")
-    await bot.get_guild(538499583832227850).get_channel(538500047575449600).send(f"@everyone {message}")
+    discord_server = bot.get_guild(os.environ['DISCORD_GUILD_ID'])
+    batphone_channel = discord_server.get_channel(os.environ['DISCORD_BATPHONE_CHANNEL_ID'])
+
+    await batphone_channel.send(f"@everyone {message}")
 
 
 @bot.command()
@@ -125,4 +128,4 @@ def parse_args(*s):
 
 
 # Run the bot
-bot.run(os.environ['BOT_TOKEN'])
+bot.run(os.environ['DISCORD_BOT_TOKEN'])

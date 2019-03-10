@@ -1,5 +1,6 @@
-import re
 import os
+import re
+
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
@@ -17,7 +18,10 @@ def get_raw_data():
     response = requests.get(os.environ['EQDKP_URL']+config.POINTS_URL)
     raw_html = BeautifulSoup(response.text, 'html.parser')
     overview_table_html = raw_html.find(name='table', class_='hptt')
-    player_data_html = overview_table_html.find_all(name='span', attrs=config.EQDKP_SPAN_ATTRS)
+    player_data_html = overview_table_html.find_all(name='span', attrs={'positive',
+                                                                        'negative',
+                                                                        'neutral',
+                                                                        re.compile('class_*')})
     player_data_raw = [data.string for data in player_data_html]
     n = len(config.EQDKP_COLUMNS)
     data_by_player = [player_data_raw[i:i + n] for i in range(0, len(player_data_raw), n)]
