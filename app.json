@@ -1,0 +1,28 @@
+{
+  "addons": [
+
+  ],
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    }
+  ],
+  "description": "EverQuest Discord Bot",
+  "env": {
+    "BOT_TOKEN": {
+      "required": true
+    },
+    "EQDKP_API_TOKEN": {
+      "required": true
+    },
+    "EQDKP_URL": {
+      "required": true
+    }
+  },
+  "formation": {
+  },
+  "name": "eq_discord_bot",
+  "scripts": {
+  },
+  "stack": "heroku-18"
+}
