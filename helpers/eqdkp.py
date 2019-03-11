@@ -25,6 +25,12 @@ _API_TOKEN = os.environ['EQDKP_API_TOKEN']
 _API_HEADERS = {'X-Custom-Authorization': f'token={_API_TOKEN}&type=api'}
 _API_PARAMS = {'format': 'json'}
 
+# GET STANDINGS CONFIGURATION
+EQDKP_COLUMNS = ['CHARACTER', 'CLASS', 'DKP', '30DAY', '60DAY', '90DAY']
+ATTENDANCE_COLUMNS = ["30DAY", "60DAY", "90DAY"]
+DEFAULT_ORDER = ['DKP', '30DAY']
+TOP_N = 50
+
 
 def post(function, payload):
     params = _API_PARAMS
@@ -73,46 +79,41 @@ def get_raw_data():
                                                                         'neutral',
                                                                         re.compile('class_*')})
     player_data_raw = [data.string for data in player_data_html]
-    eqdkp_columns = ['CHARACTER', 'CLASS', 'DKP', '30DAY', '60DAY', '90DAY']
-    n = len(eqdkp_columns)
+    n = len(EQDKP_COLUMNS)
     data_by_player = [player_data_raw[i:i + n] for i in range(0, len(player_data_raw), n)]
 
     # Create the DataFrame
-    df = pd.DataFrame(data_by_player, columns=eqdkp_columns)
+    df = pd.DataFrame(data_by_player, columns=EQDKP_COLUMNS)
 
     # Convert DKP & Attendance columns
-    attendance_cols = ["30DAY", "60DAY", "90DAY"]
-    df[attendance_cols] = df[attendance_cols].applymap(lambda x: Attendance(x))
+    df[ATTENDANCE_COLUMNS] = df[ATTENDANCE_COLUMNS].applymap(lambda x: Attendance(x))
     df['DKP'] = df['DKP'].apply(lambda x: float(x))
 
-    # Apply default sorting and index
-    df = order_df(df, ['DKP', '30DAY'])
+    # Apply default sorting and dkp ranking columns
+    df = order_df(df, DEFAULT_ORDER)
     df.insert(loc=3, column='DKP RANK', value=df.index)
 
     return df
 
 
 def get_points(filters=None):
-    print(f'get_points({filters}) called')
+    columns = DEFAULT_ORDER
 
     # Get a Cached Dataframe if available, otherwise query new one
     df = get_raw_data()
-    n = 50
 
     if filters:
 
         # Apply Custom Sorting
         if 'ORDERBY' in filters:
             columns = filters.pop('ORDERBY')
-            df = order_df(df, columns)
 
         # Set Top N (applied in return)
         if 'TOP' in filters:
-            n_str = filters.pop('TOP')[0]
-            n = int(n_str) if n_str.is_numeric() else n
-            n = 50 if n > 50 else n
+            n_str = filters.pop('TOP')
+            n = 50 if not n_str.is_numeric() else 50 if int(n_str) > 50 else int(n_str)
 
-        # Apply filters
+        # Apply column filters
         for key, value in filters.items():
 
             key = 'CHARACTER' if key in ['NAME', 'CHAR'] else key
@@ -136,6 +137,9 @@ def get_points(filters=None):
                 df_filter = eval(f"df.__getattr__('{key}') {value}")
 
             df = df[df_filter]
+
+    # Reindex before returning
+    df = order_df(df, columns)
 
     return df.head(n)
 
