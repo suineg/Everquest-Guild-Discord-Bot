@@ -1,18 +1,6 @@
-import datetime
-import os
-import random
-
-import requests
 from discord.ext import commands
 
-import helpers.config as config
 import helpers.eqdkp as eqdkp
-
-_EQDKP_URL = os.environ['EQDKP_URL']
-_EQDKP_API_URL = _EQDKP_URL + 'api.php'
-_EQDKP_API_TOKEN = os.environ['EQDKP_API_TOKEN']
-_EQDKP_API_HEADERS = {'X-Custom-Authorization': f'token={_EQDKP_API_TOKEN}&type=user'}
-_EQDKP_API_PARAMS = {'format': 'json'}
 
 
 class DKP(commands.Cog):
@@ -21,7 +9,8 @@ class DKP(commands.Cog):
         self.bot = bot
 
     @commands.command()
-    async def dkp(self, ctx, *, filters):
+    @commands.cooldown(rate=3, per=10.0, type=commands.BucketType.user)
+    async def standings(self, ctx, *, filters):
         """
         Get DKP standings
 
@@ -52,31 +41,35 @@ class DKP(commands.Cog):
             Top 20 players by DKP, 30day:   !dkp top=20                              (Default sort)
         """
 
-        seconds_remaining = config.SPAM_DELAY_IN_SECONDS - (datetime.now() - config.LAST_RUN).seconds
-        if seconds_remaining > 0:
-            await ctx.send(f"{random.choice(config.INSULTS)} [{seconds_remaining} seconds remaining...]")
-        else:
-            config.LAST_RUN = datetime.now()
-            filters = self.parse_args(*filters)
-            points = eqdkp.get_points(filters)
-            chunks = [points[i:i + 10] for i in range(0, len(points), 10)]
-            for chunk in chunks:
-                await ctx.send(f"""```
+        filters = eqdkp.parse_args(*filters)
+        points = eqdkp.get_points(filters)
+        chunks = [points[i:i + 10] for i in range(0, len(points), 10)]
+        for chunk in chunks:
+            await ctx.send(f"""```
 {chunk}```""")
 
     @commands.command()
     @commands.has_any_role('Admin', 'Raid Leader')
     async def addraid(self, ctx, *, message):
+        """Add a raid to the EQDKP site"""
+
+        # TODO Implement
         await ctx.send("This feature isn't enabled yet.")
 
     @commands.command()
     @commands.has_any_role('Admin', 'Raid Leader')
     async def additem(self, ctx, *, message):
+        """Add a character to the EQDKP site"""
+
+        # TODO Implement
         await ctx.send("This feature isn't enabled yet.")
 
     @commands.command()
     @commands.has_any_role('Admin', 'Raid Leader')
     async def addadjustment(self, ctx, *, message):
+        """Add a raid adjustment to the EQDKP site"""
+
+        # TODO Implement
         await ctx.send("This feature isn't enabled yet.")
 
     @commands.command()
@@ -84,16 +77,10 @@ class DKP(commands.Cog):
     async def addcharacter(self, ctx, character):
         """Add a character to the EQDKP site"""
 
-        json = {
-            'name': f'{character}',
-            'servername': 'Amtrak'
-        }
-        params = _EQDKP_API_PARAMS
-        params['function'] = 'character'
-
-        response = requests.post(_EQDKP_API_URL, headers=_EQDKP_API_HEADERS, params=params, json=json)
-
-        if response and response.json()['status'] == 1:
-            character_id = response.json()['character_id']
-            await ctx.send(f'''```{character} was successfully added to {_EQDKP_URL}.
-Character Id: {character_id}````''')
+        json = eqdkp.create_character(character)
+        if json:
+            if json['status'] == 0:
+                return await ctx.send('`Error processing request: {}`'.format(json['error']))
+            else:
+                character_id = json['character_id']
+                await ctx.send(f'`{character} was successfully added. (Id: {character_id})`')

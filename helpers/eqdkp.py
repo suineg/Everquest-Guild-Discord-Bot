@@ -7,11 +7,64 @@ from bs4 import BeautifulSoup
 from cachetools import cached, TTLCache
 
 from helpers import config
+from models.attendance import Attendance
 
-cache = TTLCache(maxsize=100, ttl=180)
+# CACHE CONFIGURATION
+_cache = TTLCache(maxsize=100, ttl=180)
+
+# PANDAS DISPLAY CONFIGURATION
+pd.set_option('display.max_rows', 25)
+pd.set_option('display.max_columns', 6)
+pd.set_option('display.width', 1000)
+pd.set_option('display.column_space', 25)
+
+# EQDKP API CONFIGURATION
+_URL = os.environ['EQDKP_URL']
+_API_URL = _URL + 'api.php'
+_API_TOKEN = os.environ['EQDKP_API_TOKEN']
+_API_HEADERS = {'X-Custom-Authorization': f'token={_API_TOKEN}&type=user'}
+_API_PARAMS = {'format': 'json'}
 
 
-@cached(cache)
+def post(function, payload):
+    params = _API_PARAMS
+    params['function'] = function
+    response = requests.post(url=_API_URL,
+                             headers=_API_HEADERS,
+                             params=params,
+                             json=payload)
+    return response.json() if response.ok else None
+
+
+def create_character(character):
+    """This will create a character on eqdkp"""
+
+    payload = {
+        'name': f'{character}',
+        'servername': 'Amtrak'
+    }
+    return post('character', payload)
+
+
+def create_raid():
+    """This will create a raid on eqdkp"""
+    # TODO Implement
+    pass
+
+
+def create_raid_item():
+    """This will add a raid item on eqdkp"""
+    # TODO Implement
+    pass
+
+
+def create_adjustment():
+    """This will create a raid adjustment on eqdkp"""
+    # TODO Implement
+    pass
+
+
+@cached(_cache)
 def get_raw_data():
 
     # Get the HTML & Parse it
@@ -78,36 +131,37 @@ def get_points(filters=None):
 
     return df.head(n)
 
-    def parse_args(*s):
-        if s is None:
-            return None
-        filters = {}
-        operators = ['=', ':', ';']
-        comparisons = ['>', '<', '>=', '<=']
-        value_splits = [',', '/']
-        arg_pairs = [re.split(r'(\W)', arg_pair, maxsplit=1) for arg_pair in s]
-        try:
-            for arg_pair in arg_pairs:
 
-                # Define the filter key
-                key = arg_pair[0].upper()
-                key = "CHARACTER" if key == "NAME" or key == "CHAR" else key
+def parse_args(*s):
+    if s is None:
+        return None
+    filters = {}
+    operators = ['=', ':', ';']
+    comparisons = ['>', '<', '>=', '<=']
+    value_splits = [',', '/']
+    arg_pairs = [re.split(r'(\W)', arg_pair, maxsplit=1) for arg_pair in s]
+    try:
+        for arg_pair in arg_pairs:
 
-                if key not in (config.EQDKP_COLUMNS + config.ADDITIONAL_FILTERS):
-                    continue
+            # Define the filter key
+            key = arg_pair[0].upper()
+            key = "CHARACTER" if key == "NAME" or key == "CHAR" else key
 
-                if arg_pair[1] not in operators and arg_pair[1] not in comparisons:
-                    raise SyntaxError(''.join(arg_pair))
+            if key not in (config.EQDKP_COLUMNS + config.ADDITIONAL_FILTERS):
+                continue
 
-                if arg_pair[1] in operators:
-                    value = re.split('|'.join(value_splits), arg_pair[2])
+            if arg_pair[1] not in operators and arg_pair[1] not in comparisons:
+                raise SyntaxError(''.join(arg_pair))
 
-                else:
-                    value = ' '.join(arg_pair[1:])
+            if arg_pair[1] in operators:
+                value = re.split('|'.join(value_splits), arg_pair[2])
 
-                filters[key] = value
+            else:
+                value = ' '.join(arg_pair[1:])
 
-        except SyntaxError:
-            pass
-        finally:
-            return filters
+            filters[key] = value
+
+    except SyntaxError:
+        pass
+    finally:
+        return filters

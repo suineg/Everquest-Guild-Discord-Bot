@@ -37,14 +37,3 @@ EQ_CLASS_SIMILARITIES = {
     'Ranger': ['rng', 'rang'],
     'Beastlord': ['bst', 'beast']
 }
-
-LAST_RUN = None
-SPAM_DELAY_IN_SECONDS = 2
-
-INSULTS = [
-    "Hey do me a favor shit-bag, stop spamming the channel!",
-    "I swear to god, if you ping me one more time, I'm  going to delete your DKP.",
-    "Go fuck an aids ridden corpse you worthless piece of shit.",
-    "I sincerely hope you die in a fire.",
-    "You're worse than Cupie, let's be honest."
-]
