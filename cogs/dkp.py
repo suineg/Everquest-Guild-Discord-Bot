@@ -11,7 +11,7 @@ import helpers.eqdkp as eqdkp
 _EQDKP_URL = os.environ['EQDKP_URL']
 _EQDKP_API_URL = _EQDKP_URL + 'api.php'
 _EQDKP_API_TOKEN = os.environ['EQDKP_API_TOKEN']
-_EQDKP_API_HEADERS = {'X-Custom-Authorization': f'token={_EQDKP_API_TOKEN}&type=api'}
+_EQDKP_API_HEADERS = {'X-Custom-Authorization': f'token={_EQDKP_API_TOKEN}&type=user'}
 _EQDKP_API_PARAMS = {'format': 'json'}
 
 
