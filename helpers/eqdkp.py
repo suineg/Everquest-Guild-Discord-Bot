@@ -85,7 +85,7 @@ def get_raw_data():
     # Convert DKP & Attendance columns
     attendance_cols = ["30DAY", "60DAY", "90DAY"]
     df[attendance_cols] = df[attendance_cols].applymap(lambda x: Attendance(x))
-    df['DKP'] = df['DKP'].apply(lambda x: int(x))
+    df['DKP'] = df['DKP'].apply(lambda x: float(x))
 
     # Apply default sorting and index
     df = df.sort_values(by=list(config.INDEX_SORT.keys()), ascending=list(config.INDEX_SORT.values()))
