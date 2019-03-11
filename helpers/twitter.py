@@ -2,8 +2,10 @@ import os
 
 import twitter
 
+import helpers.utils as utils
 
-def post_tweet(status_update):
+
+def post_tweet(status_update: utils.add_est_timestamp):
     api = twitter.Api(consumer_key=os.environ['TWITTER_CONSUMER_API_KEY'],
                       consumer_secret=os.environ['TWITTER_CONSUMER_API_SECRET_KEY'],
                       access_token_key=os.environ['TWITTER_ACCESS_TOKEN'],

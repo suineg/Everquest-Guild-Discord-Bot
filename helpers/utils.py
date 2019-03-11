@@ -34,4 +34,4 @@ def add_est_timestamp(string):
         return None
 
     now = datetime.datetime.now(tz=tz.gettz('America/New_York'))
-    return f'{string} ({now.strftime("%I:%M %p")})'
+    return f'{string} ({now.strftime("%i:%M %p")})'
