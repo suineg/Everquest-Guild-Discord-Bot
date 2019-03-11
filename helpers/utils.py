@@ -16,7 +16,7 @@ def to_kwargs(arg_list):
                     ':': '='}
     kwargs = {}
     for arg_string in arg_list:
-        for op, translation in translations:
+        for op, translation in translations.items():
             if op in arg_string:
                 arg_string.replace(op, translation)
 

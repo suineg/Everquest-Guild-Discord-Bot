@@ -113,20 +113,21 @@ def get_points(filters=None):
         n = 50 if n > 50 else n
 
     # Apply filters
-    for key, value in filters.items():
-        if key in config.ADDITIONAL_FILTERS:
-            continue
-        if type(value) == list:
-            if key == "CLASS":
-                good_values = [k
-                               for x in value
-                               for k, v in config.EQ_CLASS_SIMILARITIES.items()
-                               if x.lower() in v or x.lower() == k.lower()]
-            if key == "CHARACTER":
-                good_values = [v.capitalize() for v in value]
-            df_filter = df.__getattr__(key).isin(good_values)
-        else:
-            df_filter = eval(f"df.__getattr__('{key}') {value}")
-        df = df[df_filter]
+    if filters:
+        for key, value in filters.items():
+            if key in config.ADDITIONAL_FILTERS:
+                continue
+            if type(value) == list:
+                if key == "CLASS":
+                    good_values = [k
+                                   for x in value
+                                   for k, v in config.EQ_CLASS_SIMILARITIES.items()
+                                   if x.lower() in v or x.lower() == k.lower()]
+                if key == "CHARACTER":
+                    good_values = [v.capitalize() for v in value]
+                df_filter = df.__getattr__(key).isin(good_values)
+            else:
+                df_filter = eval(f"df.__getattr__('{key}') {value}")
+            df = df[df_filter]
 
     return df.head(n)
