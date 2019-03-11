@@ -10,7 +10,7 @@ class DKP(commands.Cog):
 
     @commands.command()
     @commands.cooldown(rate=3, per=10.0, type=commands.BucketType.user)
-    async def standings(self, ctx, *, filters):
+    async def standings(self, ctx, *, filters=None):
         """
         Get DKP standings
 
@@ -50,7 +50,7 @@ class DKP(commands.Cog):
 
     @commands.command()
     @commands.has_any_role('Admin', 'Raid Leader')
-    async def addraid(self, ctx, *, message):
+    async def addraid(self, ctx, *, message=None):
         """Add a raid to the EQDKP site"""
 
         # TODO Implement
@@ -58,7 +58,7 @@ class DKP(commands.Cog):
 
     @commands.command()
     @commands.has_any_role('Admin', 'Raid Leader')
-    async def additem(self, ctx, *, message):
+    async def additem(self, ctx, *, message=None):
         """Add a character to the EQDKP site"""
 
         # TODO Implement
@@ -66,7 +66,7 @@ class DKP(commands.Cog):
 
     @commands.command()
     @commands.has_any_role('Admin', 'Raid Leader')
-    async def addadjustment(self, ctx, *, message):
+    async def addadjustment(self, ctx, *, message=None):
         """Add a raid adjustment to the EQDKP site"""
 
         # TODO Implement
@@ -74,8 +74,11 @@ class DKP(commands.Cog):
 
     @commands.command()
     @commands.has_any_role('Admin', 'Raid Leader')
-    async def addcharacter(self, ctx, character):
+    async def addcharacter(self, ctx, character=None):
         """Add a character to the EQDKP site"""
+
+        if not character:
+            return ctx.send('`Please provide a character name to create.`')
 
         json = eqdkp.create_character(character)
         if json:

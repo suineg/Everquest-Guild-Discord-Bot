@@ -15,8 +15,12 @@ class Admin(commands.Cog):
 
     @commands.command()
     @commands.has_any_role('Admin', 'Raid Leader')
-    async def tweet(self, ctx, *, message):
+    async def tweet(self, ctx, *, message=None):
         """Send a tweet to the AmtrakEQ Twitter account. Required role: @Admin or @Raid Leader"""
+
+        if not message:
+            return ctx.send(f"""{ctx.author.mention} I'm already doing 90% of the work.  
+Do you want me to come up with the message too?""")
 
         now = datetime.datetime.now(tz=tz.gettz('America/New_York'))
         status = twitter.post_tweet(f'{message} ({now.strftime("%I:%M %p")})')
