@@ -130,38 +130,3 @@ def get_points(filters=None):
         df = df[df_filter]
 
     return df.head(n)
-
-
-def parse_args(*s):
-    if s is None:
-        return None
-    filters = {}
-    operators = ['=', ':', ';']
-    comparisons = ['>', '<', '>=', '<=']
-    value_splits = [',', '/']
-    arg_pairs = [re.split(r'(\W)', arg_pair, maxsplit=1) for arg_pair in s]
-    try:
-        for arg_pair in arg_pairs:
-
-            # Define the filter key
-            key = arg_pair[0].upper()
-            key = "CHARACTER" if key == "NAME" or key == "CHAR" else key
-
-            if key not in (config.EQDKP_COLUMNS + config.ADDITIONAL_FILTERS):
-                continue
-
-            if arg_pair[1] not in operators and arg_pair[1] not in comparisons:
-                raise SyntaxError(''.join(arg_pair))
-
-            if arg_pair[1] in operators:
-                value = re.split('|'.join(value_splits), arg_pair[2])
-
-            else:
-                value = ' '.join(arg_pair[1:])
-
-            filters[key] = value
-
-    except SyntaxError:
-        pass
-    finally:
-        return filters

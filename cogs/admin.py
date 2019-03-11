@@ -1,11 +1,10 @@
-import datetime
 import os
 
 import discord
-from dateutil import tz
 from discord.ext import commands
 
 from helpers import twitter
+from helpers.utils import *
 
 
 class Admin(commands.Cog):
@@ -15,27 +14,24 @@ class Admin(commands.Cog):
 
     @commands.command()
     @commands.has_any_role('Admin', 'Raid Leader')
-    async def tweet(self, ctx, *, message=None):
+    async def tweet(self, ctx, *, message: add_est_timestamp = None):
         """Send a tweet to the AmtrakEQ Twitter account. Required role: @Admin or @Raid Leader"""
 
         if not message:
             return ctx.send(f"""{ctx.author.mention} I'm already doing 90% of the work.  
 Do you want me to come up with the message too?""")
 
-        now = datetime.datetime.now(tz=tz.gettz('America/New_York'))
-        status = twitter.post_tweet(f'{message} ({now.strftime("%I:%M %p")})')
+        status = twitter.post_tweet(message)
 
         if type(status) == str:
             return await ctx.send(f'`Tweet failed: {status}`')
-        else:
-            await ctx.send(f'`Batphone sent: {status.text}`')
 
-            embed = discord.Embed(title='Batphone',
-                                  description=f'@everyone {status.text}',
-                                  colour=discord.Colour.teal(),
-                                  author=ctx.author.display_name,
-                                  timestamp=now)
-            discord_server = self.bot.get_guild(os.environ['DISCORD_GUILD_ID'])
-            batphone_channel = discord_server.get_channel(os.environ['DISCORD_BATPHONE_CHANNEL_ID'])
+        embed = discord.Embed(title='Batphone',
+                              description=f'@everyone {status.text}',
+                              colour=discord.Colour.teal(),
+                              author=ctx.author.display_name)
+        discord_server = self.bot.get_guild(os.environ['DISCORD_GUILD_ID'])
+        batphone_channel = discord_server.get_channel(os.environ['DISCORD_BATPHONE_CHANNEL_ID'])
 
-            await batphone_channel.send(embed=embed)
+        await ctx.send(f'`Batphone sent: {status.text}`')
+        await batphone_channel.send(embed=embed)

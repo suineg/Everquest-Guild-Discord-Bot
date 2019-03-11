@@ -1,6 +1,7 @@
 from discord.ext import commands
 
 import helpers.eqdkp as eqdkp
+from helpers.utils import *
 
 
 class DKP(commands.Cog):
@@ -10,7 +11,7 @@ class DKP(commands.Cog):
 
     @commands.command()
     @commands.cooldown(rate=3, per=10.0, type=commands.BucketType.user)
-    async def standings(self, ctx, *, filters=None):
+    async def standings(self, ctx, *filters: to_kwargs):
         """
         Get DKP standings
 
@@ -41,7 +42,6 @@ class DKP(commands.Cog):
             Top 20 players by DKP, 30day:   !dkp top=20                              (Default sort)
         """
 
-        filters = eqdkp.parse_args(*filters)
         points = eqdkp.get_points(filters)
         chunks = [points[i:i + 10] for i in range(0, len(points), 10)]
         for chunk in chunks:
