@@ -78,49 +78,36 @@ def get_points(filters=None):
 
     return df.head(n)
 
+    def parse_args(*s):
+        if s is None:
+            return None
+        filters = {}
+        operators = ['=', ':', ';']
+        comparisons = ['>', '<', '>=', '<=']
+        value_splits = [',', '/']
+        arg_pairs = [re.split(r'(\W)', arg_pair, maxsplit=1) for arg_pair in s]
+        try:
+            for arg_pair in arg_pairs:
 
-class Attendance:
-    pattern = r'\((\d*)\/(\d*)\)'
+                # Define the filter key
+                key = arg_pair[0].upper()
+                key = "CHARACTER" if key == "NAME" or key == "CHAR" else key
 
-    def __init__(self, data):
-        match = re.search(self.pattern, data)
-        if match:
-            self.raids_attended = int(match[1])
-            self.raids_available = int(match[2])
-            self.attendance = self.raids_attended / self.raids_available
+                if key not in (config.EQDKP_COLUMNS + config.ADDITIONAL_FILTERS):
+                    continue
 
-    def __str__(self):
-        return f"{self.attendance*100:.0f}% ({self.raids_attended}/{self.raids_available})"
+                if arg_pair[1] not in operators and arg_pair[1] not in comparisons:
+                    raise SyntaxError(''.join(arg_pair))
 
-    def __lt__(self, other):
-        if isinstance(other, Attendance):
-            return self.attendance < other.attendance
-        if isinstance(other, int) or isinstance(other, float):
-            return self.attendance*100 < other
+                if arg_pair[1] in operators:
+                    value = re.split('|'.join(value_splits), arg_pair[2])
 
-    def __gt__(self, other):
-        if isinstance(other, Attendance):
-            return self.attendance > other.attendance
-        if isinstance(other, int) or isinstance(other, float):
-            return self.attendance*100 > other
+                else:
+                    value = ' '.join(arg_pair[1:])
 
-    def __le__(self, other):
-        if isinstance(other, Attendance):
-            return self.attendance <= other.attendance
-        if isinstance(other, int) or isinstance(other, float):
-            return self.attendance * 100 <= other
+                filters[key] = value
 
-    def __ge__(self, other):
-        if isinstance(other, Attendance):
-            return self.attendance >= other.attendance
-        if isinstance(other, int) or isinstance(other, float):
-            return self.attendance*100 >= other
-
-    def __eq__(self, other):
-        if isinstance(other, Attendance):
-            return self.attendance == other.attendance
-        if isinstance(other, int) or isinstance(other, float):
-            return self.attendance * 100 == other
-
-    def __hash__(self):
-        return hash(self.attendance)
+        except SyntaxError:
+            pass
+        finally:
+            return filters
