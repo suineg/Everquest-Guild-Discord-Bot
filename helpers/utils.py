@@ -3,8 +3,8 @@ import datetime
 from dateutil import tz
 
 
-def to_kwargs(arg_list):
-    """Converts a list of arguments in a string format of "key=value" to a dictionary"""
+def to_kwargs(*arg_list):
+    """Converts arg list ['key=value', ...] to dict {'KEY': 'VALUE', ...}"""
 
     if not arg_list:
         return None
@@ -21,7 +21,7 @@ def to_kwargs(arg_list):
                 arg_string.replace(op, translation)
 
         arg_list = arg_string.split('=')
-        kwargs[arg_list[0]] = arg_list[1].split(',')
+        kwargs[arg_list[0].upper()] = arg_list[1].upper().split(',')
     return kwargs
 
 

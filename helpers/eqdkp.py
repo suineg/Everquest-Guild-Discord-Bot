@@ -68,7 +68,7 @@ def create_adjustment():
 def get_raw_data():
 
     # Get the HTML & Parse it
-    response = requests.get(os.environ['EQDKP_URL']+config.POINTS_URL)
+    response = requests.get(os.environ['EQDKP_URL'] + 'index.php/Points')
     raw_html = BeautifulSoup(response.text, 'html.parser')
     overview_table_html = raw_html.find(name='table', class_='hptt')
     player_data_html = overview_table_html.find_all(name='span', attrs={'positive',
@@ -76,11 +76,12 @@ def get_raw_data():
                                                                         'neutral',
                                                                         re.compile('class_*')})
     player_data_raw = [data.string for data in player_data_html]
-    n = len(config.EQDKP_COLUMNS)
+    eqdkp_columns = ['CHARACTER', 'CLASS', 'DKP', '30DAY', '60DAY', '90DAY']
+    n = len(eqdkp_columns)
     data_by_player = [player_data_raw[i:i + n] for i in range(0, len(player_data_raw), n)]
 
     # Create the DataFrame
-    df = pd.DataFrame(data_by_player, columns=config.EQDKP_COLUMNS)
+    df = pd.DataFrame(data_by_player, columns=eqdkp_columns)
 
     # Convert DKP & Attendance columns
     attendance_cols = ["30DAY", "60DAY", "90DAY"]
@@ -88,7 +89,7 @@ def get_raw_data():
     df['DKP'] = df['DKP'].apply(lambda x: float(x))
 
     # Apply default sorting and index
-    df = df.sort_values(by=list(config.INDEX_SORT.keys()), ascending=list(config.INDEX_SORT.values()))
+    df = df.sort_values(by=['DKP', '30DAY'], ascending=[False, False])
     df = df.reset_index(drop=True)
     df.index += 1
 
@@ -102,22 +103,22 @@ def get_points(filters=None):
 
     # Apply Custom Sorting
     if 'ORDERBY' in filters:
-        order_by = [o.upper() for o in filters['ORDERBY']]
-        ascending = [config.ORDER_BY_ASC_DEFAULTS[o] for o in order_by]
+        order_by = filters.pop('ORDERBY')
+        ascending = [True if o in ['CHARACTER', 'CLASS'] else False for o in order_by]
         df = df.sort_values(by=order_by, ascending=ascending)
 
     # Set Top N (applied in return)
     n = 50
-    if 'TOP' in filters and filters['TOP'][0].isnumeric():
-        n = int(filters['TOP'][0])
+    if 'TOP' in filters:
+        n_str = filters.pop('TOP')[0]
+        n = int(n_str) if n_str.is_numeric() else n
         n = 50 if n > 50 else n
 
     # Apply filters
     if filters:
         for key, value in filters.items():
-            if key in config.ADDITIONAL_FILTERS:
-                continue
             if type(value) == list:
+                good_values = []
                 if key == "CLASS":
                     good_values = [k
                                    for x in value
