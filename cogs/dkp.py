@@ -93,7 +93,7 @@ class DKP(commands.Cog):
 
         response = requests.post(_EQDKP_API_URL, headers=_EQDKP_API_HEADERS, params=params, json=json)
 
-        if response and response['status'] == 1:
-            character_id = response['character_id']
+        if response and response.json()['status'] == 1:
+            character_id = response.json()['character_id']
             await ctx.send(f'''```{character} was successfully added to {_EQDKP_URL}.
 Character Id: {character_id}````''')
