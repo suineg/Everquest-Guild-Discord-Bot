@@ -22,7 +22,7 @@ pd.set_option('display.column_space', 25)
 _URL = os.environ['EQDKP_URL']
 _API_URL = _URL + 'api.php'
 _API_TOKEN = os.environ['EQDKP_API_TOKEN']
-_API_HEADERS = {'X-Custom-Authorization': f'token={_API_TOKEN}&type=user'}
+_API_HEADERS = {'X-Custom-Authorization': f'token={_API_TOKEN}&type=api'}
 _API_PARAMS = {'format': 'json'}
 
 
