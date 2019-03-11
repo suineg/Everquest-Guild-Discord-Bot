@@ -14,7 +14,7 @@ _cache = TTLCache(maxsize=100, ttl=180)
 
 # PANDAS DISPLAY CONFIGURATION
 pd.set_option('display.max_rows', 25)
-pd.set_option('display.max_columns', 6)
+pd.set_option('display.max_columns', 10)
 pd.set_option('display.width', 1000)
 pd.set_option('display.column_space', 25)
 
@@ -39,10 +39,7 @@ def post(function, payload):
 def create_character(character):
     """This will create a character on eqdkp"""
 
-    payload = {
-        'name': f'{character}',
-        'servername': 'Amtrak'
-    }
+    payload = {'name': character}
     return post('character', payload)
 
 
@@ -89,46 +86,66 @@ def get_raw_data():
     df['DKP'] = df['DKP'].apply(lambda x: float(x))
 
     # Apply default sorting and index
-    df = df.sort_values(by=['DKP', '30DAY'], ascending=[False, False])
-    df = df.reset_index(drop=True)
-    df.index += 1
+    df = order_df(df, ['DKP', '30DAY'])
+    df.insert(loc=3, column='DKP RANK', value=df.index)
 
     return df
 
 
 def get_points(filters=None):
+    print(f'get_points({filters}) called')
 
     # Get a Cached Dataframe if available, otherwise query new one
     df = get_raw_data()
-
-    # Apply Custom Sorting
-    if 'ORDERBY' in filters:
-        order_by = filters.pop('ORDERBY')
-        ascending = [True if o in ['CHARACTER', 'CLASS'] else False for o in order_by]
-        df = df.sort_values(by=order_by, ascending=ascending)
-
-    # Set Top N (applied in return)
     n = 50
-    if 'TOP' in filters:
-        n_str = filters.pop('TOP')[0]
-        n = int(n_str) if n_str.is_numeric() else n
-        n = 50 if n > 50 else n
 
-    # Apply filters
     if filters:
+
+        # Apply Custom Sorting
+        if 'ORDERBY' in filters:
+            columns = filters.pop('ORDERBY')
+            df = order_df(df, columns)
+
+        # Set Top N (applied in return)
+        if 'TOP' in filters:
+            n_str = filters.pop('TOP')[0]
+            n = int(n_str) if n_str.is_numeric() else n
+            n = 50 if n > 50 else n
+
+        # Apply filters
         for key, value in filters.items():
-            if type(value) == list:
-                good_values = []
-                if key == "CLASS":
+
+            key = 'CHARACTER' if key in ['NAME', 'CHAR'] else key
+            if key in ['CLASS', 'CHARACTER']:
+                if type(value) == str:
+                    value = [value]
+
+                if key == 'CLASS':
                     good_values = [k
                                    for x in value
                                    for k, v in config.EQ_CLASS_SIMILARITIES.items()
                                    if x.lower() in v or x.lower() == k.lower()]
-                if key == "CHARACTER":
+                else:
                     good_values = [v.capitalize() for v in value]
+
                 df_filter = df.__getattr__(key).isin(good_values)
+
             else:
+                value = value.replace('GTE', '>=').replace('LTE', '<=').replace('GT', '>').replace('LT', '<')
+                print(f'Converted value: {value}')
                 df_filter = eval(f"df.__getattr__('{key}') {value}")
+
             df = df[df_filter]
 
     return df.head(n)
+
+
+def order_df(df, columns):
+    if type(columns) == str:
+        columns = [columns]
+    columns = ['CHARACTER' if col in ['CHAR', 'NAME'] else col.upper() for col in columns]
+    ascending = [True if col in ['CHARACTER', 'CLASS'] else False for col in columns]
+    df = df.sort_values(by=columns, ascending=ascending)
+    df = df.reset_index(drop=True)
+    df.index += 1
+    return df

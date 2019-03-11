@@ -11,7 +11,7 @@ class DKP(commands.Cog):
 
     @commands.command()
     @commands.cooldown(rate=3, per=10.0, type=commands.BucketType.user)
-    async def standings(self, ctx, *filters: to_kwargs):
+    async def standings(self, ctx, *, filters: to_kwargs = None):
         """
         Get DKP standings
 
