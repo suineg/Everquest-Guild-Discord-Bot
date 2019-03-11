@@ -81,21 +81,19 @@ class DKP(commands.Cog):
 
     @commands.command()
     @commands.has_any_role('Admin', 'Raid Leader')
-    async def addcharacter(self, ctx, *, character):
+    async def addcharacter(self, ctx, character):
         """Add a character to the EQDKP site"""
 
         json = {
             'name': f'{character}',
             'servername': 'Amtrak'
         }
-        params = {
-            'function': 'character'
-        }
-        params += _EQDKP_API_PARAMS
+        params = _EQDKP_API_PARAMS
+        params['function'] = 'character'
 
         response = requests.post(_EQDKP_API_URL, headers=_EQDKP_API_HEADERS, params=params, json=json)
 
         if response and response['status'] == 1:
             character_id = response['character_id']
             await ctx.send(f'''```{character} was successfully added to {_EQDKP_URL}.
-Character Id: {response}````''')
+Character Id: {character_id}````''')
