@@ -1,10 +1,10 @@
 from discord.ext import commands
 
-import helpers.eqdkp as eqdkp
+import interface.eqdkp as eqdkp
 from helpers.utils import *
 
 
-class DKP(commands.Cog):
+class DKP(commands.Cog, name='EqDkp Queries'):
 
     def __init__(self, bot):
         self.bot = bot
@@ -47,43 +47,3 @@ class DKP(commands.Cog):
         for chunk in chunks:
             await ctx.send(f"""```
 {chunk}```""")
-
-    @commands.command()
-    @commands.has_any_role('Admin', 'Raid Leader')
-    async def addraid(self, ctx, *, message=None):
-        """Add a raid to the EQDKP site"""
-
-        # TODO Implement
-        await ctx.send("This feature isn't enabled yet.")
-
-    @commands.command()
-    @commands.has_any_role('Admin', 'Raid Leader')
-    async def additem(self, ctx, *, message=None):
-        """Add a character to the EQDKP site"""
-
-        # TODO Implement
-        await ctx.send("This feature isn't enabled yet.")
-
-    @commands.command()
-    @commands.has_any_role('Admin', 'Raid Leader')
-    async def addadjustment(self, ctx, *, message=None):
-        """Add a raid adjustment to the EQDKP site"""
-
-        # TODO Implement
-        await ctx.send("This feature isn't enabled yet.")
-
-    @commands.command()
-    @commands.has_any_role('Admin', 'Raid Leader')
-    async def addcharacter(self, ctx, character=None):
-        """Add a character to the EQDKP site"""
-
-        if not character:
-            return ctx.send('`Please provide a character name to create.`')
-
-        json = eqdkp.create_character(character)
-        if json:
-            if json['status'] == 0:
-                return await ctx.send('`Error processing request: {}`'.format(json['error']))
-            else:
-                character_id = json['character_id']
-                await ctx.send(f'`{character} was successfully added. (Id: {character_id})`')

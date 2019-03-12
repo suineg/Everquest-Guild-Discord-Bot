@@ -1,6 +1,9 @@
 import datetime
+import os
 import re
 
+import aiohttp
+import async_timeout
 from dateutil import tz
 
 
@@ -35,3 +38,19 @@ def add_est_timestamp(string):
 
     now = datetime.datetime.now(tz=tz.gettz('America/New_York'))
     return f'{string} ({now.strftime("%i:%M %p")})'
+
+
+async def download_attachment(url):
+    """Downloads an attachment in a message for the Bot"""
+
+    async with aiohttp.ClientSession() as session:
+        with async_timeout.timeout(10):
+            async with session.get(url) as response:
+                filename = os.path.basename(url)
+                with open(filename, 'wb') as f_handle:
+                    while True:
+                        chunk = await response.content.read(1024)
+                        if not chunk:
+                            break
+                        f_handle.write(chunk)
+                return await response.release()

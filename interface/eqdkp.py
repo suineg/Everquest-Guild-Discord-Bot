@@ -1,5 +1,6 @@
 import os
 import re
+from collections import namedtuple
 
 import pandas as pd
 import requests
@@ -8,6 +9,7 @@ from cachetools import cached, TTLCache
 
 from helpers import config
 from models.attendance import Attendance
+from models.raidevent import RaidEvent
 
 # CACHE CONFIGURATION
 _cache = TTLCache(maxsize=100, ttl=180)
@@ -23,7 +25,6 @@ _URL = os.environ['EQDKP_URL']
 _API_URL = _URL + 'api.php'
 _API_TOKEN = os.environ['EQDKP_API_TOKEN']
 _API_HEADERS = {'X-Custom-Authorization': f'token={_API_TOKEN}&type=api'}
-_API_PARAMS = {'format': 'json'}
 
 # GET STANDINGS CONFIGURATION
 EQDKP_COLUMNS = ['CHARACTER', 'CLASS', 'DKP', '30DAY', '60DAY', '90DAY']
@@ -33,26 +34,52 @@ TOP_N = 50
 
 
 def post(function, payload):
-    params = _API_PARAMS
-    params['function'] = function
-    response = requests.post(url=_API_URL,
-                             headers=_API_HEADERS,
-                             params=params,
-                             json=payload)
-    return response.json() if response.ok else None
+    params = {'format': 'json', 'function': function}
+    response = requests.post(url=_API_URL, headers=_API_HEADERS, params=params, json=payload)
+    success = response.ok and response.status_code == 200
+    if success:
+        data = response.json()
+        status = data.pop('status')
+        return data if status == 1 else None
+    else:
+        return None
+
+
+def get(function, params=None):
+    default_params = {'format': 'json', 'function': function}
+    if params:
+        for param, value in params.items():
+            default_params[param] = value
+    response = requests.get(url=_API_URL, headers=_API_HEADERS, params=default_params)
+    success = response.ok and response.status_code == 200
+    if success:
+        data = response.json()
+        status = data.pop('status')
+        return data if status == 1 else None
+    else:
+        return None
 
 
 def create_character(character):
     """This will create a character on eqdkp"""
 
+    Character = namedtuple('Character', 'id name')
     payload = {'name': character}
-    return post('character', payload)
+    response = post(function='character', payload=payload)
+    return Character(id=response['character_id'], name=character) if response else None
 
 
-def create_raid():
+def create_raid(raid_date, raid_attendees, raid_value, raid_event_id, raid_note=None):
     """This will create a raid on eqdkp"""
-    # TODO Implement
-    pass
+
+    payload = {
+        'raid_date': raid_date,
+        'raid_attendees': {'member': raid_attendees},
+        'raid_value': raid_value,
+        'raid_event_id': raid_event_id,
+        'raid_note': raid_note or ''
+    }
+    return post(function='add_raid', payload=payload)
 
 
 def create_raid_item():
@@ -65,6 +92,31 @@ def create_adjustment():
     """This will create a raid adjustment on eqdkp"""
     # TODO Implement
     pass
+
+
+def get_events():
+    """This will get all characters in eqdkp and their corresponding id's"""
+
+    response = get('events')
+    return [RaidEvent(**data) for event, data in response.items()] if response else None
+
+
+def get_characters():
+    """This will get all characters in eqdkp and their corresponding id's"""
+
+    Character = namedtuple('Character', ['id',
+                                         'name',
+                                         'active',
+                                         'hidden',
+                                         'main_id',
+                                         'main_name',
+                                         'class_id',
+                                         'class_name',
+                                         'points',
+                                         'items',
+                                         'adjustments'])
+    response = get('points')
+    return [Character(**data) for player, data in response['players'].items()] if response else None
 
 
 @cached(_cache)

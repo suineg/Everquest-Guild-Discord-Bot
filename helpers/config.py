@@ -1,3 +1,4 @@
+# MESSAGE TEMPLATES
 
 EQ_RE_TELLS_YOU = r'^\[[a-zA-Z0-9: ]{24}\] (\w*?) tells you, \'(.*)\'$'
 
