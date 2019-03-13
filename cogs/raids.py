@@ -17,53 +17,84 @@ class Raids(commands.Cog, name='Raid Management'):
     @commands.command()
     @commands.has_any_role('Admin', 'Raid Leader')
     async def addraid(self, ctx, *, event: RaidEvent):
-        """Add a raid to the eqdkp site"""
+        """Add a raid to the eqdkp site
 
-        if not event:
-            return await ctx.send("Cancelled.  Please try again")
+         1. You need to attach a RaidRoster file along with this command.
+         2. You can enter a part of an event name, or the event id in order to select it
+            __Please note: Because of this, make sure what you're entering is enough of a partial
+            to match the correct event you're looking for.__
 
-        raid_files = [file for file in ctx.message.attachments if 'RaidRoster' in file.filename]
+
+        :param event: Partial name of event, or ID
+        :return: EQDKP Raid
+        """
 
         def check_author(m):
             return m.author == ctx.author
+
+        if not event:
+            return await ctx.send("`Error: A valid raid event is required.`")
+
+        msg = None
+        if not ctx.message.attachments:
+            try:
+                await ctx.send("`It appears you forgot to attach a RaidRoster file.  Please do that now.`")
+                msg = await ctx.bot.wait_for('message', check=check_author, timeout=60)
+                if not msg.attachments or 'RaidRoster' not in msg.attachments[0].filename:
+                    raise Exception
+            except Exception:
+                return await ctx.send("Addraid cancelled: You did not upload a RaidRoster file.")
+
+        attachments = ctx.message.attachments or msg.attachments
+        raid_files = [file for file in attachments if 'RaidRoster' in file.filename]
+
+        characters = eqdkp.get_characters()
 
         async with ctx.typing():
             for file in raid_files:
                 await download_attachment(file.url)
                 with open(file.filename, 'r') as f:
                     content = f.readlines()
+                os.remove(file.filename)
                 datetime_str = ' '.join(file.filename.replace('.txt', '').split('-')[1:])
                 raid_datetime = datetime.datetime.strptime(datetime_str, '%Y%m%d %H%M%S').strftime('%Y-%m-%d %H:%M')
                 raiders = [x.split('\t')[1] for x in content]
                 raiders_missing = [raider
                                    for raider in raiders
                                    if raider not in [character.name
-                                                     for character in self.characters]]
+                                                     for character in characters]]
 
                 if raiders_missing:
                     await ctx.send(f"""```md
+# Missing Players
+
 The following [{len(raiders_missing)}][raiders] are not currently in EqDkp:
 {', '.join(raiders_missing)}
 
-Would you like to add them to eqdkp & raid? [Yes/No, default=Yes]```""")
+1. Would you like to add them to eqdkp & raid? [Yes/No, default=Yes]```""")
                     try:
-                        msg = await ctx.bot.wait_for('message', check=check_author, timeout=5)
+                        msg = await ctx.bot.wait_for('message', check=check_author, timeout=10)
                         add_raiders = False if "no" in msg.content.lower() else True
                     except Exception:
                         add_raiders = True
 
                     if add_raiders:
                         for raider in raiders_missing[:]:
-                            new_character = eqdkp.create_character(raider)
+                            new_character = None  # eqdkp.create_character(raider)
                             if new_character:
-                                self.characters.append(new_character)
+                                characters.append(new_character)
                                 raiders_missing.remove(raider)
-                                await ctx.send(f"Created {new_character} on eqdkp.  Please link to proper user")
+                                await ctx.send(f"Created `{new_character.name}` on eqdkp.  Please link to proper user")
                             else:
-                                raiders.remove(raider)
-                                await ctx.send(f"Failed to created {raider}.  Please create manually and add to raid")
+                                # raiders.remove(raider)
+                                await ctx.send(f"Failed to created `{raider}`.  Please create manually and add to raid")
 
-                await ctx.send('`(Optional) Please enter a note for this raid:`')
+                await ctx.send(f"""```md
+# Raid Note
+
+> If you don't enter anything, the note will be set to {event.name}
+
+1. Please enter a note for this raid:```""")
                 try:
                     msg = await ctx.bot.wait_for('message', check=check_author, timeout=15)
                     note = msg.content.upper()
@@ -71,7 +102,7 @@ Would you like to add them to eqdkp & raid? [Yes/No, default=Yes]```""")
                     note = None
 
                 raid_attendees = [c.id
-                                  for c in self.characters
+                                  for c in characters
                                   if c.name in raiders
                                   and c.name not in raiders_missing]
                 raid = eqdkp.create_raid(raid_datetime, raid_attendees, event.value, event.id, note)

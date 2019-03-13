@@ -46,9 +46,11 @@ class RaidEvent:
             event = event[0]
             timeout = 10
             await ctx.send(f"""```md
+# Raid Event Selected
+
 You have chosen raid [{event.id}][{event.name}] with a default value of [{event.value}][DKP]
 
-# If this raid is **incorrect** please type <cancel> now.
+> If this raid is **incorrect** please type <cancel> now.
 
 1. Enter a new DKP amount now to override the default of {event.value}
 2. Otherwise, please wait {timeout} seconds to accept the default```""")

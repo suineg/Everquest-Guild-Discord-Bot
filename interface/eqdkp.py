@@ -82,7 +82,7 @@ def create_raid(raid_date, raid_attendees, raid_value, raid_event_id, raid_note=
     return post(function='add_raid', payload=payload)
 
 
-def create_raid_item():
+def create_raid_item(item_date, item_buyers, item_value, item_name, item_raid_id, item_itempool_id):
     """This will add a raid item on eqdkp"""
     # TODO Implement
     pass
