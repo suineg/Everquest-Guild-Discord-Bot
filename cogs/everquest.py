@@ -19,7 +19,7 @@ class EverQuest(commands.Cog, name='everquest'):
         self.bot = bot
         self.characters = []
 
-    @commands.command()
+    @commands.command(aliases=['item', 'quest', 'mob', 'spell', 'recipe'])
     async def alla(self, ctx, *, search):
         """Find Eq Item on Allakhazam"""
 
@@ -191,7 +191,7 @@ The following [{len(raiders_missing)}][raiders] are not currently in EqDkp:
                                           url=url,
                                           description=event.name,
                                           colour=discord.Colour.red())
-                    embed.set_thumbnail(url=gifs.Giphy.NSFW("thomas the train").url)
+                    embed.set_thumbnail(url=gifs.Gif.Giphy().search("thomas the train"))
                     embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
                     embed.add_field(name='DKP', value=event.value)
                     embed.add_field(name='Raiders', value=str(len(raid_attendees)))
@@ -220,7 +220,7 @@ Do you want me to come up with the message too?""")
                               description=message,
                               colour=discord.Colour.red(),
                               author=ctx.author.display_name, timestamp=datetime.datetime.now())
-        embed.set_image(url=gifs.Giphy.NSFW("thomas the train").url)
+        embed.set_image(url=gifs.Gif.Giphy().search("thomas the train"))
         embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
 
         guild = self.bot.get_guild(int(os.environ.get('DISCORD_GUILD_ID', 0)))

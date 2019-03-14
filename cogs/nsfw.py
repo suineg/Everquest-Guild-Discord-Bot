@@ -1,6 +1,5 @@
 from collections import namedtuple
 
-import discord
 from discord.ext import commands
 
 from interface.gifs import Subreddit
@@ -75,10 +74,7 @@ class nsfw(commands.Cog):
     async def embed_spoiler(self, ctx):
         reds = self._reddits[ctx.command.name].reddits
         sub = await Subreddit(reds).random()
-        embed = discord.Embed(colour=discord.Colour.dark_blue())
-        embed.set_author(name=ctx.bot.user.name)
-        embed.set_image(url=sub.url)
-        await ctx.send(f'|| {sub.url} ||', embed=embed)
+        await ctx.send(f'|| {sub.url} ||')
 
 
 def setup(bot: commands.Bot):
