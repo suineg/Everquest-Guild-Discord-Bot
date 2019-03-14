@@ -1,6 +1,11 @@
+from collections import namedtuple
 from datetime import datetime
+from difflib import get_close_matches
+from urllib import parse
 
 import discord
+import requests
+from bs4 import BeautifulSoup
 from discord.ext import commands
 
 from helpers.utils import *
@@ -8,11 +13,96 @@ from interface import eqdkp, twitter, gifs
 from models.raidevent import RaidEvent
 
 
-class Raids(commands.Cog, name='Raid Management'):
+class EverQuest(commands.Cog, name='everquest'):
 
     def __init__(self, bot):
         self.bot = bot
         self.characters = []
+
+    @commands.command()
+    async def alla(self, ctx, *, search):
+        """Find Eq Item on Allakhazam"""
+
+        def extract_alla_data(tag):
+            AllaMatch = namedtuple('AllaMatch', ['name', 'url', 'type'])
+            _name = tag.string
+            _url = tag['href']
+            _type = 'Unknown'
+            match = re.search(r'/db/(\w*).html\?.*', _url)
+            if match:
+                _type = match.group(1).capitalize()
+            return AllaMatch(name=_name, url=_url[1:], type=_type)
+
+        url = 'http://everquest.allakhazam.com/'
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36'
+        }
+
+        search_url = parse.quote_plus(f'{url}search.html?q={search.replace(" ", "+")}', safe='/:?=+')
+        response = requests.get(search_url, headers=headers)
+        raw = BeautifulSoup(response.text, 'html.parser')
+        all_divs = raw.find_all(name='div', class_='tbcont')
+        if all_divs:
+            a_href_tags = [item
+                           for sublist in [div.find_all(name='a', href=True) for div in all_divs]
+                           for item in sublist]
+            alla_matches = [extract_alla_data(a)
+                            for a in a_href_tags
+                            if a.string]
+            close_matches = get_close_matches(word=search,
+                                              possibilities=[am.name for am in alla_matches],
+                                              n=10,
+                                              cutoff=0.25)
+            am_match_list = [am for am in alla_matches if am.name in close_matches]
+            description = '\n'.join([f"{am.type}: [{am.name}]({url}{am.url})"
+                                     for am in am_match_list])
+        else:
+            description = f'No good matches for `{search}`'
+
+        embed = discord.Embed(title='Allakhazam Matches',
+                              description=description,
+                              colour=discord.Colour.red())
+        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
+        await ctx.send(embed=embed)
+
+    @commands.command()
+    @commands.cooldown(rate=3, per=10.0, type=commands.BucketType.user)
+    async def dkp(self, ctx, *, filters: to_kwargs = None):
+        """
+        Get DKP standings
+
+        Filters:
+            1.) Each filter is designed as a key=value pairing.
+            2.) Text filters will be set with = and can include a comma separated list for value
+            3.) Numeric filters can be set with >, <, >=, <= and must include an integer for value
+            4.) Additional filters will be separated by a space.  No spaces must exist in a key=value pairing
+
+        Output Columns:
+            Filters can be built around the following 6 columns (orderby defaults)
+            1.) Character (Asc)
+            2.) Class (Asc)
+            3.) DKP (Desc)
+            4.) 30Day (Desc)
+            5.) 60Day (Desc)
+            6.) 90Day (Desc)
+
+        Additional Filters:
+            In addition to be able to filter on each column, can you can provide these extras:
+            1.) orderby=(comma separated list of columns)
+            2.) top=#.  (Bot will not ever give more than 50)
+
+        Examples:
+            Top 5 warriors by 30 day:       !dkp class=war orderby=30day top=5
+            Top 10 tanks over 2k DKP:       !dkp class=war,pal,sk dkp>2000 top=10
+            [WRONG] No spaces in filter:    !dkp class=shadow knight
+            Top 20 players by DKP, 30day:   !dkp top=20                              (Default sort)
+        """
+
+        points = eqdkp.get_points(filters)
+        chunks = [points[i:i + 10] for i in range(0, len(points), 10)]
+        for chunk in chunks:
+            await ctx.send(f"""```
+{chunk}```""")
 
     @commands.command()
     @commands.has_any_role('Admin', 'Raid Leader')
@@ -193,3 +283,7 @@ Do you want me to come up with the message too?""")
     async def addcharacter_error(self, ctx, error):
         if isinstance(error, commands.MissingRequiredArgument):
             await ctx.send('`Error: Missing Character Name.  Syntax: !addcharacter [character name]`')
+
+
+def setup(bot: commands.Bot):
+    bot.add_cog(EverQuest(bot))
