@@ -27,11 +27,19 @@ class nsfw(commands.Cog):
                                 reddits=['yuri', 'ahegao', 'rule34', 'monstergirl']),
 
         'gay': RedditCommand(aliases=['fag', 'faggot', 'homo', 'homosexual'],
-                             reddits=[])
+                             reddits=['nsfw_gay', 'gayblowjobs']),
+
+        'bear': RedditCommand(aliases=['furry'],
+                              reddits=['gaybears', 'gaybeards'])
     }
 
     def __init__(self, bot):
         self.bot = bot
+
+    @commands.command(aliases=_reddits['nsfw'].aliases)
+    async def nsfw(self, ctx):
+        """This is not for Drillisen"""
+        pass
 
     @commands.command(aliases=_reddits['dick'].aliases)
     async def dick(self, ctx):
@@ -53,10 +61,17 @@ class nsfw(commands.Cog):
         """Sorry.  I got semen in your beard"""
         pass
 
+    @commands.command(aliases=_reddits['bear'].aliases)
+    async def bear(self, ctx):
+        """It's too cold to not have a furry rub up all on you"""
+        pass
+
+    @nsfw.after_invoke
     @dick.after_invoke
     @boob.after_invoke
     @hentai.after_invoke
     @gay.after_invoke
+    @bear.after_invoke
     async def embed_spoiler(self, ctx):
         reds = self._reddits[ctx.command.name].reddits
         sub = await Subreddit(reds).random()
