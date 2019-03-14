@@ -201,7 +201,7 @@ The following [{len(raiders_missing)}][raiders] are not currently in EqDkp:
                 else:
                     await ctx.send('Raid failed to create.  Please upload manually')
 
-    @commands.command()
+    @commands.command(aliases=['tweet', 'letsgo', 'wakeup'])
     @commands.has_any_role('Admin', 'Raid Leader')
     async def batphone(self, ctx, *, message: add_est_timestamp = None):
         """Send a tweet to the AmtrakEQ Twitter account."""
