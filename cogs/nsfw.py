@@ -29,7 +29,10 @@ class nsfw(commands.Cog):
                              reddits=['nsfw_gay', 'gayblowjobs']),
 
         'bear': RedditCommand(aliases=['furry'],
-                              reddits=['gaybears', 'gaybeards'])
+                              reddits=['gaybears']),
+
+        'jesus': RedditCommand(aliases=['christ', 'christian', 'lordsavior', 'god'],
+                               reddits=['jesus', 'dankchristianmemes', 'funnyjesus'])
     }
 
     def __init__(self, bot):
@@ -65,16 +68,16 @@ class nsfw(commands.Cog):
         """It's too cold to not have a furry rub up all on you"""
         pass
 
-    @nsfw.after_invoke
-    @dick.after_invoke
-    @boob.after_invoke
-    @hentai.after_invoke
-    @gay.after_invoke
-    @bear.after_invoke
-    async def embed_spoiler(self, ctx):
+    @commands.command(aliases=_reddits['jesus'].aliases)
+    async def jesus(self, ctx):
+        """Praise our Lord and Savior Jesus Christ"""
+        pass
+
+    async def cog_after_invoke(self, ctx):
         reds = self._reddits[ctx.command.name].reddits
         sub = await Subreddit(reds).random()
-        await ctx.send(f'|| {sub.url} ||')
+        url = f'|| {sub.url} ||' if sub.over_18 else sub.url
+        await ctx.send(url)
 
 
 def setup(bot: commands.Bot):
