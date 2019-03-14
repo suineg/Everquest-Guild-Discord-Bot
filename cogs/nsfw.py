@@ -2,7 +2,7 @@ from collections import namedtuple
 
 from discord.ext import commands
 
-from interface.gifs import Subreddit
+from interface.reddit import Subreddit
 
 RedditCommand = namedtuple('RedditCommand', ['aliases', 'reddits'])
 
