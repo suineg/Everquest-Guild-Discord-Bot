@@ -4,11 +4,11 @@ import praw
 
 
 class Subreddit:
+
     _valid_exts = ['gif', 'png', 'jpg', 'mp4']
-    _nsfw = ['gonewild', 'nsfw_gif', 'nsfw_gay']
 
     def __init__(self, subreddits):
-        self.reddit = praw.Reddit(user_agent='linux:amtrak-discord-bot:v0.1.0 (by /u/superdonkeyts)')
+        self.reddit = praw.Reddit(user_agent='linux:amtrak-discord-bot:v0.1.0')
         self.subreddits = subreddits
 
     @property
@@ -21,12 +21,6 @@ class Subreddit:
             self._subreddits = '+'.join(value)
         else:
             self._subreddits = value.replace(' ', '+').replace(',', '+')
-
-    @classmethod
-    def dicks(cls):
-        subreddits = ['cospenis', 'penis', 'cock', 'massivecock', 'blackdick', 'ratemycock', 'malesmasturbating',
-                      'ladybonersgw', 'growler']
-        return cls(subreddits)
 
     async def random(self):
         is_gif = False

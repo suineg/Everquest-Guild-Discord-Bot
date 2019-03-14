@@ -12,7 +12,7 @@ from models.attendance import Attendance
 from models.raidevent import RaidEvent
 
 # CACHE CONFIGURATION
-_cache = TTLCache(maxsize=100, ttl=180)
+_cache = TTLCache(maxsize=100, ttl=60)
 
 # PANDAS DISPLAY CONFIGURATION
 pd.set_option('display.max_rows', 25)
@@ -150,6 +150,7 @@ def get_raw_data():
 
 def get_points(filters=None):
     columns = DEFAULT_ORDER
+    n = TOP_N
 
     # Get a Cached Dataframe if available, otherwise query new one
     df = get_raw_data()
@@ -193,7 +194,7 @@ def get_points(filters=None):
     # Reindex before returning
     df = order_df(df, columns)
 
-    return df.head(n)
+    return df.head(n or TOP_N)
 
 
 def order_df(df, columns):

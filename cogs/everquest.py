@@ -35,7 +35,8 @@ class EverQuest(commands.Cog, name='everquest'):
 
         url = 'http://everquest.allakhazam.com/'
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/'
+                          '537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36'
         }
 
         search_url = parse.quote_plus(f'{url}search.html?q={search.replace(" ", "+")}', safe='/:?=+')
@@ -69,33 +70,19 @@ class EverQuest(commands.Cog, name='everquest'):
     @commands.cooldown(rate=3, per=10.0, type=commands.BucketType.user)
     async def dkp(self, ctx, *, filters: to_kwargs = None):
         """
-        Get DKP standings
+        Get standings directly from EQDKP.
 
-        Filters:
-            1.) Each filter is designed as a key=value pairing.
-            2.) Text filters will be set with = and can include a comma separated list for value
-            3.) Numeric filters can be set with >, <, >=, <= and must include an integer for value
-            4.) Additional filters will be separated by a space.  No spaces must exist in a key=value pairing
+        Filters:                            Examples:
+        - class=list of classes               !dkp class=war,sk,pal
+        - char=list of characters             !dkp char=grisvok,venun,drillisen
+        - 30day>percentage of raids           !dkp 30day>50
+        - ^ 60day and 90day also              !dkp 90day<35
+        - orderby=list of columns             !dkp class=war orderby=dkp,30day
+        - top=number to return                !dkp class=war,sk,pal orderby=dkp top=5
 
-        Output Columns:
-            Filters can be built around the following 6 columns (orderby defaults)
-            1.) Character (Asc)
-            2.) Class (Asc)
-            3.) DKP (Desc)
-            4.) 30Day (Desc)
-            5.) 60Day (Desc)
-            6.) 90Day (Desc)
 
-        Additional Filters:
-            In addition to be able to filter on each column, can you can provide these extras:
-            1.) orderby=(comma separated list of columns)
-            2.) top=#.  (Bot will not ever give more than 50)
+        Note: This data is cached every 60 seconds live from our eqdkp site
 
-        Examples:
-            Top 5 warriors by 30 day:       !dkp class=war orderby=30day top=5
-            Top 10 tanks over 2k DKP:       !dkp class=war,pal,sk dkp>2000 top=10
-            [WRONG] No spaces in filter:    !dkp class=shadow knight
-            Top 20 players by DKP, 30day:   !dkp top=20                              (Default sort)
         """
 
         points = eqdkp.get_points(filters)
