@@ -22,9 +22,9 @@ pd.set_option('display.width', 1000)
 pd.set_option('display.column_space', 25)
 
 # EQDKP API CONFIGURATION
-_URL = os.environ['EQDKP_URL']
+_URL = os.getenv('EQDKP_URL')
 _API_URL = _URL + 'api.php'
-_API_TOKEN = os.environ['EQDKP_API_TOKEN']
+_API_TOKEN = os.getenv('EQDKP_API_TOKEN')
 _API_HEADERS = {'X-Custom-Authorization': f'token={_API_TOKEN}&type=api'}
 
 # GET STANDINGS CONFIGURATION

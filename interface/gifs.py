@@ -37,7 +37,9 @@ class Giphy(Gif):
 
     def search(self, query_value):
         response = super().search(query_value)
-        return [gif['bitly_gif_url'] for gif in response.json()['data']] if response else []
+        gif_urls = [data['images']['original']['url']
+                    for data in response.json()['data']] if response else []
+        return gif_urls
 
 
 class Tenor(Gif):
@@ -49,6 +51,7 @@ class Tenor(Gif):
         params = {
             'limit': 40,
             'rating': 'R',
+            'media_filter': 'basic',
             'api_key': api_key
         }
         super().__init__(api_key=api_key, host_url=host_url,
@@ -56,7 +59,10 @@ class Tenor(Gif):
 
     def search(self, query_value):
         response = super().search(query_value)
-        return [gif['url'] for gif in response.json()['results']] if response else []
+        gif_urls = [image['gif']['url']
+                    for result in response.json()['results']
+                    for image in result['media']] if response else []
+        return gif_urls
 
 
 def get_one_gif(query):

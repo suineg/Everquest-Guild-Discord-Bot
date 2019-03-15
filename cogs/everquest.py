@@ -155,17 +155,18 @@ The following [{len(raiders_missing)}][raiders] are not currently in EqDkp:
                 if raid:
                     raid_url = f"index.php/Raids/{event.name.replace(' ', '-')}-r{raid['raid_id']}.html?s="
                     url = os.getenv('EQDKP_URL') + raid_url
-                    embed = discord.Embed(title=f'Raid {raid["raid_id"]} Created',
-                                          url=url,
-                                          description=event.name,
-                                          colour=discord.Colour.red())
-                    embed.set_thumbnail(url=gifs.get_one_gif("thomas the train"))
-                    embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
-                    embed.add_field(name='Raid Id', value=raid['raid_id'])
-                    embed.add_field(name='Raid Date', value=raid_datetime)
-                    embed.add_field(name='# of Killers', value=str(len(raid_attendees)))
-                    embed.add_field(name='DKP Value', value=event.value)
-                    embed.add_field(name='Raid Note', value=note, inline=False)
+
+                    # embed = discord.Embed(title=f'Raid {raid["raid_id"]} Created',
+                    #                       url=url,
+                    #                       description=event.name,
+                    #                       colour=discord.Colour.red())
+                    # embed.set_thumbnail(url=gifs.get_one_gif("thomas the train"))
+                    # embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
+                    # embed.add_field(name='Raid Id', value=raid['raid_id'])
+                    # embed.add_field(name='Raid Date', value=raid_datetime)
+                    # embed.add_field(name='# of Killers', value=str(len(raid_attendees)))
+                    # embed.add_field(name='DKP Value', value=event.value)
+                    # embed.add_field(name='Raid Note', value=note, inline=False)
 
                     channel = ctx.bot.get_guild(self.guild_id).get_channel(self.dkp_log_id)
                     await channel.send(embed=embed)
@@ -226,6 +227,8 @@ You have selected Raid #[{raid.id}][{raid.event_name}] on {raid.date}
 1. Please enter the items from this raid in the following format: <Character> <DKP> <Item Name>
 2. When you are done entering items, enter <done>
 ```""")
+            data_log_entry = f"```md\n# Item Log Entry for Raid {str(raid.id).ljust(5)} : {raid.event_name}\n\n"
+            i = 0
             try:
                 while True:
                     msg = await ctx.bot.wait_for('message', check=check_author, timeout=30)
@@ -268,14 +271,22 @@ You have selected Raid #[{raid.id}][{raid.event_name}] on {raid.date}
                                                        item_value=item_value,
                                                        item_buyers=[character.id])
                     if raid_item:
+                        i += 1
                         await ctx.send(
                             f"`{item_name} was successfully charged to {character.name} for {item_value} dkp.  "
                             f"Continue with the next item, or type done.`")
+                        data_log_entry += f"{(str(i) + '.').ljust(5)}{item_name.ljust(30)}{character.name.ljust(25)}"
+                        data_log_entry += f"{str(item_value).ljust(5)} DKP\n"
+
                     else:
                         await ctx.send(f"`ERROR: {item_name} failed to get entered.  Please try again`")
 
             except Exception:
                 pass
+
+            data_log_entry += '```'
+            channel = ctx.bot.get_guild(self.guild_id).get_channel(self.dkp_log_id)
+            await channel.send(data_log_entry)
 
     @commands.command()
     @commands.has_any_role('Admin', 'Raid Leader')

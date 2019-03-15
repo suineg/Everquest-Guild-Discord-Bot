@@ -1,4 +1,4 @@
-import interface.eqdkp as eqdkp
+from interface import eqdkp
 
 
 class Raid:
