@@ -1,15 +1,11 @@
-from collections import namedtuple
 from datetime import datetime
-from difflib import get_close_matches
-from urllib import parse
 
 import discord
-import requests
-from bs4 import BeautifulSoup
 from discord.ext import commands
 
+from helpers.errors import *
 from helpers.utils import *
-from interface import eqdkp, twitter, gifs
+from interface import eqdkp, twitter, gifs, allakhazam
 from models.raidevent import RaidEvent
 
 
@@ -20,46 +16,10 @@ class EverQuest(commands.Cog, name='everquest'):
         self.characters = []
 
     @commands.command(aliases=['item', 'quest', 'mob', 'spell', 'recipe'])
-    async def alla(self, ctx, *, search):
+    async def alla(self, ctx, *, query: str):
         """Find Eq Item on Allakhazam"""
 
-        def extract_alla_data(tag):
-            AllaMatch = namedtuple('AllaMatch', ['name', 'url', 'type'])
-            _name = tag.string
-            _url = tag['href']
-            _type = 'Unknown'
-            match = re.search(r'/db/(\w*).html\?.*', _url)
-            if match:
-                _type = match.group(1).capitalize()
-            return AllaMatch(name=_name, url=_url[1:], type=_type)
-
-        url = 'http://everquest.allakhazam.com/'
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/'
-                          '537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36'
-        }
-
-        search_url = parse.quote_plus(f'{url}search.html?q={search.replace(" ", "+")}', safe='/:?=+')
-        response = requests.get(search_url, headers=headers)
-        raw = BeautifulSoup(response.text, 'html.parser')
-        all_divs = raw.find_all(name='div', class_='tbcont')
-        if all_divs:
-            a_href_tags = [item
-                           for sublist in [div.find_all(name='a', href=True) for div in all_divs]
-                           for item in sublist]
-            alla_matches = [extract_alla_data(a)
-                            for a in a_href_tags
-                            if a.string]
-            close_matches = get_close_matches(word=search,
-                                              possibilities=[am.name for am in alla_matches],
-                                              n=10,
-                                              cutoff=0.25)
-            am_match_list = [am for am in alla_matches if am.name in close_matches]
-            description = '\n'.join([f"{am.type}: [{am.name}]({url}{am.url})"
-                                     for am in am_match_list])
-        else:
-            description = f'No good matches for `{search}`'
-
+        description = allakhazam.search_alla(query)
         embed = discord.Embed(title='Allakhazam Matches',
                               description=description,
                               colour=discord.Colour.red())
@@ -82,7 +42,6 @@ class EverQuest(commands.Cog, name='everquest'):
 
 
         Note: This data is cached every 60 seconds live from our eqdkp site
-
         """
 
         points = eqdkp.get_points(filters)
@@ -112,15 +71,16 @@ class EverQuest(commands.Cog, name='everquest'):
         if not event:
             return await ctx.send("`Error: A valid raid event is required.`")
 
+        # Check for RaidRoster file
         msg = None
         if not ctx.message.attachments:
             try:
                 await ctx.send("`It appears you forgot to attach a RaidRoster file.  Please do that now.`")
                 msg = await ctx.bot.wait_for('message', check=check_author, timeout=60)
                 if not msg.attachments or 'RaidRoster' not in msg.attachments[0].filename:
-                    raise Exception
-            except Exception:
-                return await ctx.send("Addraid cancelled: You did not upload a RaidRoster file.")
+                    raise InvalidRaidRosterFile
+            except InvalidRaidRosterFile:
+                return await ctx.send("Add raid cancelled: You did not upload a valid RaidRoster file.")
 
         attachments = ctx.message.attachments or msg.attachments
         raid_files = [file for file in attachments if 'RaidRoster' in file.filename]

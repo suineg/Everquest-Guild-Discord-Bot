@@ -82,10 +82,18 @@ def create_raid(raid_date, raid_attendees, raid_value, raid_event_id, raid_note=
     return post(function='add_raid', payload=payload)
 
 
-def create_raid_item(item_date, item_buyers, item_value, item_name, item_raid_id, item_itempool_id):
+def create_raid_item(item_date, item_buyers, item_value, item_name, item_raid_id, item_itempool_id=1):
     """This will add a raid item on eqdkp"""
-    # TODO Implement
-    pass
+
+    payload = {
+        'item_date': item_date,
+        'item_buyers': item_buyers,
+        'item_value': item_value,
+        'item_name': item_name,
+        'item_raid_id': item_raid_id,
+        'item_itempool_id': item_itempool_id
+    }
+    return post(function='add_item', payload=payload)
 
 
 def create_adjustment():
@@ -164,7 +172,7 @@ def get_points(filters=None):
         # Set Top N (applied in return)
         if 'TOP' in filters:
             n_str = filters.pop('TOP')
-            n = 50 if not n_str.is_numeric() else 50 if int(n_str) > 50 else int(n_str)
+            n = 50 if not n_str.isnumeric() else 50 if int(n_str) > 50 else int(n_str)
 
         # Apply column filters
         for key, value in filters.items():

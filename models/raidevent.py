@@ -44,7 +44,7 @@ class RaidEvent:
 
         if event:
             event = event[0]
-            timeout = 10
+            timeout = 20
             await ctx.send(f"""```md
 # Raid Event Selected
 

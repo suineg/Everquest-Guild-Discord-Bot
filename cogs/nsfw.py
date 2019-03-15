@@ -9,13 +9,12 @@ RedditCommand = namedtuple('RedditCommand', ['aliases', 'reddits'])
 
 class nsfw(commands.Cog):
     _reddits = {
-
         'nsfw': RedditCommand(aliases=['wild'],
                               reddits=['gonewild', 'nsfw_gif', 'nsfw_gifs']),
 
         'dick': RedditCommand(aliases=['dicks', 'cock', 'girth', 'chode', 'schlong', 'shaft', 'johnson'],
                               reddits=['cospenis', 'penis', 'cock', 'massivecock', 'blackdick', 'ratemycock',
-                                       'malesmasturbating', 'ladybonersgw', 'growler']),
+                                       'malesmasturbating', 'ladybonersgw', 'growler', 'thickdick']),
 
         'boob': RedditCommand(aliases=['boobs', 'tit', 'tits', 'titties', 'breast', 'breasts', 'knockers', 'jugs',
                                        'cans', '80085'],
@@ -23,16 +22,25 @@ class nsfw(commands.Cog):
                                        'tittydrop', 'boobies']),
 
         'hentai': RedditCommand(aliases=['yuri', 'ecchi', 'eechi', 'lestai', 'poonyetah', 'hentei', 'guro'],
-                                reddits=['yuri', 'ahegao', 'rule34', 'monstergirl']),
+                                reddits=['yuri', 'ahegao', 'rule34', 'monstergirl', 'Rule34Overwatch']),
 
         'gay': RedditCommand(aliases=['fag', 'faggot', 'homo', 'homosexual'],
-                             reddits=['nsfw_gay', 'gayblowjobs']),
+                             reddits=['nsfw_gay', 'gayblowjobs', 'guysfrombehind', 'gaygifs']),
 
         'bear': RedditCommand(aliases=['furry'],
                               reddits=['gaybears']),
 
         'jesus': RedditCommand(aliases=['christ', 'christian', 'lordsavior', 'god'],
-                               reddits=['jesus', 'dankchristianmemes', 'funnyjesus'])
+                               reddits=['jesus', 'dankchristianmemes', 'funnyjesus']),
+
+        'honeyhole': RedditCommand(aliases=['hh'],
+                                   reddits=['guysfrombehind']),
+
+        'tranny': RedditCommand(aliases=['kontra', 'chickswithdicks', 'shemale', 'trap', 'ladyboy', 'trans'],
+                                reddits=['ShemalesParadise', 'shemales']),
+
+        'eqgirls': RedditCommand(aliases=['eqgirl', 'wowgirl', 'chub', 'fat', 'chubby'],
+                                 reddits=['voluptuous', 'gonewildchubby', 'bww_chubby'])
     }
 
     def __init__(self, bot):
@@ -71,6 +79,21 @@ class nsfw(commands.Cog):
     @commands.command(aliases=_reddits['jesus'].aliases)
     async def jesus(self, ctx):
         """Praise our Lord and Savior Jesus Christ"""
+        pass
+
+    @commands.command(aliases=_reddits['honeyhole'].aliases)
+    async def honeyhole(self, ctx):
+        """How far does this honey hole go?"""
+        pass
+
+    @commands.command(aliases=_reddits['honeyhole'].aliases)
+    async def honeyhole(self, ctx):
+        """How far does this honey hole go?"""
+        pass
+
+    @commands.command(aliases=_reddits['tranny'].aliases)
+    async def tranny(self, ctx):
+        """Is that what I think it is?"""
         pass
 
     async def cog_after_invoke(self, ctx):

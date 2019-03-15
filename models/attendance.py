@@ -9,7 +9,10 @@ class Attendance:
         if match:
             self.raids_attended = int(match[1])
             self.raids_available = int(match[2])
-            self.attendance = self.raids_attended / self.raids_available
+            if self.raids_available > 0:
+                self.attendance = self.raids_attended / self.raids_available
+            else:
+                self.attendance = 0
 
     def __str__(self):
         return f"{self.attendance * 100:.0f}% ({self.raids_attended}/{self.raids_available})"
