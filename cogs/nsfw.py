@@ -96,6 +96,11 @@ class nsfw(commands.Cog):
         """Is that what I think it is?"""
         pass
 
+    @commands.command(aliases=_reddits['eqgirls'].aliases)
+    async def eqgirls(self, ctx):
+        """She's in my static group <3"""
+        pass
+
     async def cog_after_invoke(self, ctx):
         reds = self._reddits[ctx.command.name].reddits
         sub = await Subreddit(reds).random()
