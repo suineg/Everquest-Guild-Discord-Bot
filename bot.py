@@ -12,14 +12,13 @@ bot = commands.Bot(command_prefix=commands.when_mentioned_or('!'),
 
 # bot.remove_command('help')
 
-
 @bot.event
 async def on_ready():
     print('Logged in as')
     print(bot.user.name)
     print(bot.user.id)
     print('----------')
-
+    await bot.change_presence(activity=discord.Game(name='with myself'))
 
 # Here we load our extensions(cogs) that are located in the cogs directory. Any file in here attempts to load.
 cogs_dir = 'cogs'

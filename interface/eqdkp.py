@@ -9,6 +9,7 @@ from cachetools import cached, TTLCache
 
 from helpers import config
 from models.attendance import Attendance
+from models.raid import Raid
 from models.raidevent import RaidEvent
 
 # CACHE CONFIGURATION
@@ -31,6 +32,18 @@ EQDKP_COLUMNS = ['CHARACTER', 'CLASS', 'DKP', '30DAY', '60DAY', '90DAY']
 ATTENDANCE_COLUMNS = ["30DAY", "60DAY", "90DAY"]
 DEFAULT_ORDER = ['DKP', '30DAY']
 TOP_N = 50
+
+Character = namedtuple('Character', ['id',
+                                     'name',
+                                     'active',
+                                     'hidden',
+                                     'main_id',
+                                     'main_name',
+                                     'class_id',
+                                     'class_name',
+                                     'points',
+                                     'items',
+                                     'adjustments'])
 
 
 def post(function, payload):
@@ -87,7 +100,7 @@ def create_raid_item(item_date, item_buyers, item_value, item_name, item_raid_id
 
     payload = {
         'item_date': item_date,
-        'item_buyers': item_buyers,
+        'item_buyers': {'member': item_buyers},
         'item_value': item_value,
         'item_name': item_name,
         'item_raid_id': item_raid_id,
@@ -109,20 +122,20 @@ def get_events():
     return [RaidEvent(**data) for event, data in response.items()] if response else None
 
 
+def get_raids(raid_id: int = None):
+    """This will get raid data from eqdkp"""
+
+    params = {}
+    if raid_id:
+        params['number'] = raid_id
+
+    response = get('raids', params=params)
+    return [Raid(**data) for raid, data in response.items()] if response else None
+
+
 def get_characters():
     """This will get all characters in eqdkp and their corresponding id's"""
 
-    Character = namedtuple('Character', ['id',
-                                         'name',
-                                         'active',
-                                         'hidden',
-                                         'main_id',
-                                         'main_name',
-                                         'class_id',
-                                         'class_name',
-                                         'points',
-                                         'items',
-                                         'adjustments'])
     response = get('points')
     return [Character(**data) for player, data in response['players'].items()] if response else None
 

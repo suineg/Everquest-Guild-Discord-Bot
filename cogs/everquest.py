@@ -6,12 +6,16 @@ from discord.ext import commands
 from helpers.errors import *
 from helpers.utils import *
 from interface import eqdkp, twitter, gifs, allakhazam
+from models.raid import Raid
 from models.raidevent import RaidEvent
 
 
 class EverQuest(commands.Cog, name='everquest'):
 
     def __init__(self, bot):
+        self.guild_id = int(os.getenv('DISCORD_GUILD_ID', 0))
+        self.batphone_id = int(os.getenv('DISCORD_BATPHONE_CHANNEL_ID', 0))
+        self.dkp_log_id = int(os.getenv('DISCORD_DKP_ENTRY_LOG_CHANNEL_ID', 0))
         self.bot = bot
         self.characters = []
 
@@ -94,7 +98,7 @@ class EverQuest(commands.Cog, name='everquest'):
                     content = f.readlines()
                 os.remove(file.filename)
                 datetime_str = ' '.join(file.filename.replace('.txt', '').split('-')[1:])
-                raid_datetime = datetime.datetime.strptime(datetime_str, '%Y%m%d %H%M%S').strftime('%Y-%m-%d %H:%M')
+                raid_datetime = datetime.datetime.strptime(datetime_str, '%Y%m%d %H%M%S')
                 raiders = [x.split('\t')[1] for x in content]
                 raiders_missing = [raider
                                    for raider in raiders
@@ -142,22 +146,30 @@ The following [{len(raiders_missing)}][raiders] are not currently in EqDkp:
                                   for c in characters
                                   if c.name in raiders
                                   and c.name not in raiders_missing]
-                raid = eqdkp.create_raid(raid_datetime, raid_attendees, event.value, event.id, note)
+                raid = eqdkp.create_raid(raid_datetime.strftime('%Y-%m-%d %H:%M'),
+                                         raid_attendees,
+                                         event.value,
+                                         event.id,
+                                         note)
 
                 if raid:
                     raid_url = f"index.php/Raids/{event.name.replace(' ', '-')}-r{raid['raid_id']}.html?s="
                     url = os.getenv('EQDKP_URL') + raid_url
-                    embed = discord.Embed(title='Raid Created',
+                    embed = discord.Embed(title=f'Raid {raid["raid_id"]} Created',
                                           url=url,
                                           description=event.name,
                                           colour=discord.Colour.red())
                     embed.set_thumbnail(url=gifs.get_one_gif("thomas the train"))
                     embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
-                    embed.add_field(name='DKP', value=event.value)
-                    embed.add_field(name='Raiders', value=str(len(raid_attendees)))
-                    embed.add_field(name='Date', value=raid_datetime)
-                    embed.add_field(name='Note', value=note)
-                    await ctx.send(embed=embed)
+                    embed.add_field(name='Raid Id', value=raid['raid_id'])
+                    embed.add_field(name='Raid Date', value=raid_datetime)
+                    embed.add_field(name='# of Killers', value=str(len(raid_attendees)))
+                    embed.add_field(name='DKP Value', value=event.value)
+                    embed.add_field(name='Raid Note', value=note, inline=False)
+
+                    channel = ctx.bot.get_guild(self.guild_id).get_channel(self.dkp_log_id)
+                    await channel.send(embed=embed)
+                    await ctx.send(f'Raid `ID: {raid["raid_id"]} EVENT: {event.name}` was successfully created')
                 else:
                     await ctx.send('Raid failed to create.  Please upload manually')
 
@@ -183,19 +195,87 @@ Do you want me to come up with the message too?""")
         embed.set_image(url=gifs.get_one_gif("thomas the train"))
         embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
 
-        guild = self.bot.get_guild(int(os.environ.get('DISCORD_GUILD_ID', 0)))
-        batphone_channel = guild.get_channel(int(os.environ.get('DISCORD_BATPHONE_CHANNEL_ID', 0)))
-
+        channel = ctx.bot.get_guild(self.guild_id).get_channel(self.batphone_id)
         await ctx.send(f'`Batphone sent: {status.text}`')
-        await batphone_channel.send(f'@everyone {status.text}', embed=embed)
+        await channel.send(f'@everyone {status.text}', embed=embed)
 
     @commands.command()
     @commands.has_any_role('Admin', 'Raid Leader')
-    async def additem(self, ctx, *, character):
-        """Not enabled yet"""
+    async def additem(self, ctx, raid: Raid):
+        """
+        Add an item to an EQDKP raid
 
-        # TODO Implement
-        await ctx.send("This feature isn't enabled yet.")
+        Please enter a valid raid id for the <raid> parameter.
+
+        Where is the raid id?
+        - It's posted in the Raid Confirmation message from me after !addraid
+        - It's available in the URL of the raid.  It's the r number right before the '.html'
+        """
+
+        def check_author(m):
+            return m.author == ctx.author
+
+        if raid:
+            await ctx.send(f"""```md
+# Raid Found!
+
+You have selected Raid #[{raid.id}][{raid.event_name}] on {raid.date}
+
+> If this is the wrong raid, please enter <cancel> now
+
+1. Please enter the items from this raid in the following format: <Character> <DKP> <Item Name>
+2. When you are done entering items, enter <done>
+```""")
+            try:
+                while True:
+                    msg = await ctx.bot.wait_for('message', check=check_author, timeout=30)
+                    response = msg.content.replace("<", "").replace(">", "")
+
+                    if "done" in response.lower():
+                        break
+
+                    if "cancel" in response.lower():
+                        return None
+
+                    parts = response.split()
+                    if len(parts) < 3:
+                        await ctx.send(f'The following response `{msg.content}` was not valid.  Please try again.')
+                        continue
+
+                    character_part = parts[0]
+                    item_value_part = parts[1]
+                    item_name_part = parts[2:]
+
+                    # Validate the character
+                    character = [c for c in self.characters if c.name.lower() == character_part.lower()]
+                    if not character:
+                        await ctx.send(f'The following character `{character_part}` was not valid.  Please try again.')
+                        continue
+                    character = character[0]
+
+                    # Validate the item value
+                    if not item_value_part.isnumeric():
+                        await ctx.send(f'The following dkp of `{item_value_part}` is not a number.  Please try again.')
+                        continue
+                    item_value = int(item_value_part)
+
+                    # TODO validate item_name
+                    item_name = ' '.join(item_name_part).capitalize()
+
+                    raid_item = eqdkp.create_raid_item(item_date=raid.date,
+                                                       item_name=item_name,
+                                                       item_raid_id=raid.id,
+                                                       item_value=item_value,
+                                                       item_buyers=[character.id])
+                    if raid_item:
+                        await ctx.send(
+                            f"`{item_name} was successfully charged to {character.name} for {item_value} dkp.  "
+                            f"Continue with the next item, or type done.`")
+                    else:
+                        await ctx.send(f"`ERROR: {item_name} failed to get entered.  Please try again`")
+
+            except Exception:
+                pass
 
     @commands.command()
     @commands.has_any_role('Admin', 'Raid Leader')
@@ -218,18 +298,14 @@ Do you want me to come up with the message too?""")
             await ctx.send(f"Failed to create {character}.  Please try again later, or create them manually.")
 
     @addraid.before_invoke
+    @addcharacter.before_invoke
+    @additem.before_invoke
     async def get_data(self, ctx):
         self.characters = eqdkp.get_characters()
 
-    @addraid.error
-    async def addraid_error(self, ctx, error):
+    async def cog_command_error(self, ctx, error):
         if isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send('`Error: Missing Raid Name/ID.  Syntax: !addraid [raid event name|raid event id]`')
-
-    @addcharacter.error
-    async def addcharacter_error(self, ctx, error):
-        if isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send('`Error: Missing Character Name.  Syntax: !addcharacter [character name]`')
+            await ctx.send(f'`Error: Missing Required Argument.  Please refer to !help {ctx.command.name}`')
 
 
 def setup(bot: commands.Bot):

@@ -50,7 +50,7 @@ class RaidEvent:
 
 You have chosen raid [{event.id}][{event.name}] with a default value of [{event.value}][DKP]
 
-> If this raid is **incorrect** please type <cancel> now.
+> If this raid event is **incorrect** please type <cancel> now.
 
 1. Enter a new DKP amount now to override the default of {event.value}
 2. Otherwise, please wait {timeout} seconds to accept the default```""")
