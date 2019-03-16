@@ -12,6 +12,7 @@ class Fun(commands.Cog, name="fun"):
         self.bot = bot
 
     @commands.command()
+    @commands.cooldown(rate=1, per=15, type=commands.BucketType.default)
     async def gif(self, ctx, *, search: typing.Optional[str] = 'thomas the tank engine'):
         """Search and get a random result back from Giphy & Tenor"""
 

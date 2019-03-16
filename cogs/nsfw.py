@@ -47,56 +47,67 @@ class nsfw(commands.Cog):
         self.bot = bot
 
     @commands.command(aliases=_reddits['nsfw'].aliases)
+    @commands.cooldown(rate=1, per=15, type=commands.BucketType.default)
     async def nsfw(self, ctx):
         """This is not for Drillisen"""
         pass
 
     @commands.command(aliases=_reddits['dick'].aliases)
+    @commands.cooldown(rate=1, per=15, type=commands.BucketType.default)
     async def dick(self, ctx):
         """Stare at it until you're not afraid anymore."""
         pass
 
     @commands.command(aliases=_reddits['boob'].aliases)
+    @commands.cooldown(rate=1, per=15, type=commands.BucketType.default)
     async def boob(self, ctx):
         """Please tell your boobs to stop staring at my eyes."""
         pass
 
     @commands.command(aliases=_reddits['hentai'].aliases)
+    @commands.cooldown(rate=1, per=15, type=commands.BucketType.default)
     async def hentai(self, ctx):
         """Can we make sweet memes together Onii-Chan??"""
         pass
 
     @commands.command(aliases=_reddits['gay'].aliases)
+    @commands.cooldown(rate=1, per=15, type=commands.BucketType.default)
     async def gay(self, ctx):
         """Sorry.  I got semen in your beard"""
         pass
 
     @commands.command(aliases=_reddits['bear'].aliases)
+    @commands.cooldown(rate=1, per=15, type=commands.BucketType.default)
     async def bear(self, ctx):
         """It's too cold to not have a furry rub up all on you"""
         pass
 
     @commands.command(aliases=_reddits['jesus'].aliases)
+    @commands.cooldown(rate=1, per=15, type=commands.BucketType.default)
     async def jesus(self, ctx):
         """Praise our Lord and Savior Jesus Christ"""
         pass
 
     @commands.command(aliases=_reddits['honeyhole'].aliases)
+    @commands.cooldown(rate=1, per=15, type=commands.BucketType.default)
     async def honeyhole(self, ctx):
         """How far does this honey hole go?"""
         pass
 
     @commands.command(aliases=_reddits['honeyhole'].aliases)
+    @commands.cooldown(rate=1, per=15, type=commands.BucketType.default)
     async def honeyhole(self, ctx):
         """How far does this honey hole go?"""
         pass
 
     @commands.command(aliases=_reddits['tranny'].aliases)
+    @commands.cooldown(rate=1, per=15, type=commands.BucketType.default)
     async def tranny(self, ctx):
         """Is that what I think it is?"""
         pass
 
     @commands.command(aliases=_reddits['eqgirls'].aliases)
+    @commands.cooldown(rate=1, per=15, type=commands.BucketType.default)
     async def eqgirls(self, ctx):
         """She's in my static group <3"""
         pass
