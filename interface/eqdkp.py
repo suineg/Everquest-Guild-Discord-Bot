@@ -122,13 +122,10 @@ def get_events():
     return [RaidEvent(**data) for event, data in response.items()] if response else None
 
 
-def get_raids(raid_id: int = None):
-    """This will get raid data from eqdkp"""
+def get_raids(n: int = 100):
+    """This will get the last N raids from eqdkp (Default: 100)"""
 
-    params = {}
-    if raid_id:
-        params['number'] = raid_id
-
+    params = {'number': n}
     response = get('raids', params=params)
     return [Raid(**data) for raid, data in response.items()] if response else None
 

@@ -22,14 +22,15 @@ class Raid:
         def check_author(m):
             return m.author == ctx.author
 
-        raid = eqdkp.get_raids(argument)
+        raids = eqdkp.get_raids()
+        raid = [raid for raid in raids if raid.id == argument]
 
         if not raid:
             await ctx.send(f'`Raid id #{argument} seems to be invalid.  Please enter the correct id:`')
             try:
                 msg = await ctx.bot.wait_for('message', check=check_author, timeout=30)
                 argument = msg.content
-                raid = eqdkp.get_raids(argument)
+                raids = eqdkp.get_raids(argument)
             except Exception:
                 pass
 

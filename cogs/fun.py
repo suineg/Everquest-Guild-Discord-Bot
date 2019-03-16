@@ -6,7 +6,7 @@ from discord.ext import commands
 from interface.gifs import get_one_gif
 
 
-class fun(commands.Cog):
+class Fun(commands.Cog, name="fun"):
 
     def __init__(self, bot):
         self.bot = bot
@@ -22,4 +22,4 @@ class fun(commands.Cog):
 
 
 def setup(bot: commands.Bot):
-    bot.add_cog(fun(bot))
+    bot.add_cog(Fun(bot))
