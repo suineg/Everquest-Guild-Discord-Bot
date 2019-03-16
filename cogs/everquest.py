@@ -188,7 +188,7 @@ Do you want me to come up with the message too?""")
                               url=f'https://twitter.com/AmtrakEq/status/{status.id}',
                               description=message,
                               colour=discord.Colour.red(),
-                              author=ctx.author.display_name, timestamp=datetime.datetime.now())
+                              author=ctx.author.display_name)
         embed.set_image(url=gifs.get_one_gif("thomas the train"))
         embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
 

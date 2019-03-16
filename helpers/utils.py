@@ -36,8 +36,10 @@ def add_est_timestamp(string):
     if not string:
         return None
 
-    now = datetime.datetime.now(tz=tz.gettz('America/New_York'))
-    return f'{string} ({now.strftime("%i:%M %p")})'
+    est = tz.gettz('EDT')
+    now = datetime.datetime.now(tz=est).strftime("%I:%M %p")
+    now = now[1:] if now[0] == "0" else now
+    return f'{string} ({now})'
 
 
 async def download_attachment(url):
