@@ -181,8 +181,8 @@ Do you want me to come up with the message too?""")
 
         status = twitter.post_tweet(message)
 
-        if type(status) == str:
-            return await ctx.send(f'`Tweet failed: {status}`')
+        if not status or type(status) == str:
+            return await ctx.send(f'`ERROR: Tweet failed.  Please send manually.`')
 
         embed = discord.Embed(title='Batphone',
                               url=f'https://twitter.com/AmtrakEq/status/{status.id}',
