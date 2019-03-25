@@ -6,7 +6,7 @@ from discord.ext import commands
 from helpers.errors import *
 from helpers.msgtemplates import *
 from helpers.utils import *
-from interface import eqdkp, twitter, gifs, allakhazam
+from interface import eqdkp, twitterapi, gifs, allakhazam
 from models.raid import Raid
 from models.raidevent import RaidEvent
 
@@ -49,7 +49,7 @@ class EverQuest(commands.Cog, name='everquest'):
         points = eqdkp.get_points(filters)
         chunks = [points[i:i + 10] for i in range(0, len(points), 10)]
         for chunk in chunks:
-            await ctx.send(f"""```
+            await ctx.author.send(f"""```
 {chunk}```""")
 
     @commands.command()
@@ -91,6 +91,9 @@ class EverQuest(commands.Cog, name='everquest'):
 
         async with ctx.typing():
             for file in raid_files:
+
+                # Download and parse the RaidRoster File
+
                 await download_attachment(file.url)
                 with open(file.filename, 'r') as f:
                     content = f.readlines()
@@ -98,6 +101,34 @@ class EverQuest(commands.Cog, name='everquest'):
                 datetime_str = ' '.join(file.filename.replace('.txt', '').split('-')[1:])
                 raid_datetime = datetime.datetime.strptime(datetime_str, '%Y%m%d %H%M%S')
                 raiders = [x.split('\t')[1] for x in content]
+
+                # Check for creditt additions
+
+                await ctx.send(f"""```md
+# CREDITT additions
+
+1. Would you like to add any players to this dump? [Yes/No, default=Yes]```""")
+                try:
+                    msg = await ctx.bot.wait_for('message', check=check_author, timeout=20)
+                    creditt = False if "no" in msg.content.lower() else True
+                except Exception:
+                    creditt = True
+
+                if creditt:
+                    await ctx.send(f"""```md
+2. Please enter a comma separated list of players you would like to add:
+> Example: Player1,Player2,Player3```""")
+                    try:
+                        msg = await ctx.bot.wait_for('message', check=check_author, timeout=60)
+                        raiders_to_add = [add
+                                          for add in msg.content.replace(' ', '').split(',')
+                                          if add.lower() not in [c.lower() for c in characters]]
+                        raiders = raiders + raiders_to_add
+                    except:
+                        await ctx.send('No players added')
+
+                # Check for players not in eqdkp
+
                 raiders_missing = [raider
                                    for raider in raiders
                                    if raider not in [character.name
@@ -123,10 +154,10 @@ The following [{len(raiders_missing)}][raiders] are not currently in EqDkp:
                             if new_character:
                                 characters.append(new_character)
                                 raiders_missing.remove(raider)
-                                await ctx.send(f"Created `{new_character.name}` on eqdkp.  Please link to proper user")
                             else:
-                                # raiders.remove(raider)
-                                await ctx.send(f"Failed to created `{raider}`.  Please create manually and add to raid")
+                                await ctx.send(f"Failed to create `{raider}`.  Please create manually and add to raid")
+
+                # Add a raid note
 
                 await ctx.send(f"""```md
 # Raid Note
@@ -140,10 +171,14 @@ The following [{len(raiders_missing)}][raiders] are not currently in EqDkp:
                 except Exception:
                     note = None
 
+                # Create Raid Attendees List
+
                 raid_attendees = {c.id: c.name
                                   for c in characters
                                   if c.name in raiders
                                   and c.name not in raiders_missing}
+
+                # Create the raid
 
                 raid = eqdkp.create_raid(raid_datetime.strftime('%Y-%m-%d %H:%M'),
                                          [cid for cid, cname in raid_attendees.items()],
@@ -179,10 +214,7 @@ The following [{len(raiders_missing)}][raiders] are not currently in EqDkp:
             return ctx.send(f"""{ctx.author.mention} I'm already doing 90% of the work.  
 Do you want me to come up with the message too?""")
 
-        status = twitter.post_tweet(message)
-
-        if not status or type(status) == str:
-            return await ctx.send(f'`ERROR: Tweet failed.  Please send manually.`')
+        status = twitterapi.post_tweet(message)
 
         embed = discord.Embed(title='Batphone',
                               url=f'https://twitter.com/AmtrakEq/status/{status.id}',
