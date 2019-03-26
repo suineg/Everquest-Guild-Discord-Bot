@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime
 
 import discord
@@ -222,7 +223,11 @@ class EverQuest(commands.Cog, name='everquest'):
             item_log = ''
             while True:
                 # Wait for item entry: <Character> <DKP> <Item Name>
-                msg = await ctx.bot.wait_for('message', check=check_author, timeout=30)
+                try:
+                    msg = await ctx.bot.wait_for('message', check=check_author, timeout=60)
+                except asyncio.TimeoutError:
+                    break
+
                 response = msg.content.replace("<", "").replace(">", "")
 
                 if "done" in response.lower():
@@ -271,18 +276,20 @@ class EverQuest(commands.Cog, name='everquest'):
                     await ctx.send(f"`ERROR: {item_name} failed to get entered.  Please try again`")
 
             # Find and edit the raid log in #dkp-entry-log channel
-            async with ctx.typing():
-                channel = ctx.bot.dkp_entry_log_channel
-                messages = await channel.history(limit=50).flatten()
-                messages = [m for m in messages if f"# Raid Log Entry [{raid.id}]" in m.content]
-                if messages:
-                    message = messages[0]
-                    items_purchased = f"""\n\n* Items Purchased\n{item_log}```"""
-                    content = message.content[:-3] + items_purchased
-                    await message.edit(content=content)
-                    return await ctx.send(f'All done!  #{channel.name} has been edited.')
-                else:
-                    return await ctx.send(f"`ERROR: I wasn't able to edit #{channel.name}.  Please do so manually.`")
+            if len(item_log) > 0:
+                async with ctx.typing():
+                    channel = ctx.bot.dkp_entry_log_channel
+                    messages = await channel.history(limit=50).flatten()
+                    messages = [m for m in messages if f"# Raid Log Entry [{raid.id}]" in m.content]
+                    if messages:
+                        message = messages[0]
+                        items_purchased = f"""\n\n* Items Purchased\n{item_log}```"""
+                        content = message.content[:-3] + items_purchased
+                        await message.edit(content=content)
+                        return await ctx.send(f'All done!  #{channel.name} has been edited.')
+                    else:
+                        return await ctx.send(
+                            f"`ERROR: I wasn't able to edit #{channel.name}.  Please do so manually.`")
 
     @add.command(aliases=['adj'])
     async def adjustment(self, ctx, *, adjustment_reason: str):
