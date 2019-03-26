@@ -80,7 +80,7 @@ class EverQuest(commands.Cog, name='everquest'):
         await ctx.bot.batphone_channel.send(f'@everyone {status.text}', embed=embed)
 
     @commands.group()
-    @commands.cooldown(rate=1, per=10.0, type=commands.BucketType.guild)
+    @commands.cooldown(rate=1, per=5.0, type=commands.BucketType.guild)
     @commands.has_role('DKP')
     @has_any_channel('dkp-entry')
     async def add(self, ctx):
