@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime
 
 import discord
@@ -28,8 +29,9 @@ class EverQuest(commands.Cog, name='everquest'):
         embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
         await ctx.send(embed=embed)
 
-    @commands.command()
+    @commands.command(aliases=['standings'])
     @commands.cooldown(rate=3, per=10.0, type=commands.BucketType.user)
+    @commands.has_any_role('Member', 'Admin', 'Raid Leader', 'DKP')
     async def dkp(self, ctx, *, filters: to_kwargs = None):
         """
         Get standings directly from EQDKP.
@@ -52,8 +54,30 @@ class EverQuest(commands.Cog, name='everquest'):
             await ctx.author.send(f"""```
 {chunk}```""")
 
-    @commands.command()
+    @commands.command(aliases=['tweet', 'letsgo', 'wakeup'])
     @commands.has_any_role('Admin', 'Raid Leader')
+    async def batphone(self, ctx, *, message: add_est_timestamp = None):
+        """Send a tweet to the AmtrakEQ Twitter account."""
+
+        if not message:
+            return ctx.send(f"""{ctx.author.mention} I'm already doing 90% of the work.  
+    Do you want me to come up with the message too?""")
+
+        status = twitterapi.post_tweet(message)
+
+        embed = discord.Embed(title='Batphone',
+                              url=f'https://twitter.com/AmtrakEq/status/{status.id}',
+                              description=message,
+                              colour=discord.Colour.red())
+        embed.set_image(url=gifs.get_one_gif("thomas the train"))
+        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
+
+        channel = ctx.bot.get_guild(self.bot.guild_id).get_channel(self.bot.batphone_id)
+        await ctx.send(f'`Batphone sent: {status.text}`')
+        await channel.send(f'@everyone {status.text}', embed=embed)
+
+    @commands.command()
+    @commands.has_role('DKP')
     async def addraid(self, ctx, *, event: RaidEvent):
         """Add a raid to the eqdkp site
 
@@ -192,12 +216,12 @@ The following [{len(raiders_missing)}][raiders] are not currently in EqDkp:
 
                     attendees_by_name = [cname for cid, cname in raid_attendees.items()]
                     attendees_by_name.sort()
-                    msg = MSG_RAID_CONFIRMATION.format(url=url,
-                                                       raid_id=raid['raid_id'],
-                                                       dkp=str(event.value).center(7),
-                                                       event=event.name.center(37),
-                                                       date=raid_datetime.strftime('%m/%d/%Y').center(14),
-                                                       attendees=', '.join(attendees_by_name))
+                    msg = LOG_ENTRY_FOR_RAID.format(url=url,
+                                                    raid_id=raid['raid_id'],
+                                                    dkp=str(event.value).center(7),
+                                                    event=event.name.center(37),
+                                                    date=raid_datetime.strftime('%m/%d/%Y').center(14),
+                                                    attendees=', '.join(attendees_by_name))
 
                     channel = ctx.bot.get_guild(self.bot.guild_id).get_channel(self.bot.dkp_log_id)
                     await channel.send(msg)
@@ -205,31 +229,8 @@ The following [{len(raiders_missing)}][raiders] are not currently in EqDkp:
                 else:
                     await ctx.send('Raid failed to create.  Please upload manually')
 
-    @commands.command(aliases=['tweet', 'letsgo', 'wakeup'])
-    @commands.has_any_role('Admin', 'Raid Leader')
-    async def batphone(self, ctx, *, message: add_est_timestamp = None):
-        """Send a tweet to the AmtrakEQ Twitter account."""
-
-        if not message:
-            return ctx.send(f"""{ctx.author.mention} I'm already doing 90% of the work.  
-Do you want me to come up with the message too?""")
-
-        status = twitterapi.post_tweet(message)
-
-        embed = discord.Embed(title='Batphone',
-                              url=f'https://twitter.com/AmtrakEq/status/{status.id}',
-                              description=message,
-                              colour=discord.Colour.red(),
-                              author=ctx.author.display_name)
-        embed.set_image(url=gifs.get_one_gif("thomas the train"))
-        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
-
-        channel = ctx.bot.get_guild(self.bot.guild_id).get_channel(self.bot.batphone_id)
-        await ctx.send(f'`Batphone sent: {status.text}`')
-        await channel.send(f'@everyone {status.text}', embed=embed)
-
     @commands.command()
-    @commands.has_any_role('Admin', 'Raid Leader')
+    @commands.has_role('DKP')
     async def additem(self, ctx, raid: Raid):
         """
         Add an item to an EQDKP raid
@@ -311,7 +312,7 @@ You have selected Raid #[{raid.id}][{raid.event_name}] on {raid.date}
 
             async with ctx.typing():
                 channel = ctx.bot.get_guild(self.bot.guild_id).get_channel(self.bot.dkp_log_id)
-                messages = await channel.history(limit=25).flatten()
+                messages = await channel.history(limit=50).flatten()
                 messages = [m for m in messages if f"# Raid Log Entry {raid.id}" in m.content]
                 if messages:
                     message = messages[0]
@@ -323,15 +324,62 @@ You have selected Raid #[{raid.id}][{raid.event_name}] on {raid.date}
                     return await ctx.send(f"`ERROR: I wasn't able to edit #{channel.name}.  Please do so manually.`")
 
     @commands.command()
-    @commands.has_any_role('Admin', 'Raid Leader')
-    async def addadjustment(self, ctx, *, message=None):
+    @commands.has_role('DKP')
+    async def addadjustment(self, ctx, *, adjustment_reason: str):
         """Not enabled yet"""
 
-        # TODO Implement
-        await ctx.send("This feature isn't enabled yet.")
+        now = datetime.datetime.now(tz=tz.gettz('EDT'))
+
+        def check_author(m):
+            return m.author == ctx.author
+
+        # Get value of the adjustment
+        await ctx.send(ADJUSTMENT_VALUE.format(reason=adjustment_reason))
+        msg = await ctx.bot.wait_for('message', check=check_author, timeout=20)
+        try:
+            adjustment_value = float(msg.content)
+        except ValueError:
+            return await ctx.send(f"`ERROR: ValueError. {msg.content} is not a valid adjustment value.`")
+
+        # Request a member or a comma separated list of characters
+        await ctx.send(ADJUSTMENT_MEMBERS)
+        msg = await ctx.bot.wait_for('message', check=check_author, timeout=60)
+        members = msg.content.replace(' ', '').lower().split(',')
+        members = [c for c in self.characters if c.name.lower() in members]
+
+        # Ask if the adjustment should be applied to a raid
+        await ctx.send(ADJUSTMENT_RAID)
+        msg = await ctx.bot.wait_for('message', check=check_author, timeout=30)
+        is_raid = True if "yes" in msg.content.lower() else False
+
+        # Get the raid data if a Yes was answered above
+        raid = None
+        if is_raid:
+            await ctx.send(ADJUSTMENT_RAID_ID)
+            msg = await ctx.bot.wait_for('message', check=check_author, timeout=30)
+            raid = await Raid.convert(ctx, int(msg.content))
+
+        # Create the adjustment
+        adjustment = eqdkp.create_adjustment(adjustment_date=raid.date if is_raid else now.strftime('%Y-%m-%d %H:%M'),
+                                             adjustment_reason=adjustment_reason,
+                                             adjustment_members=[m.id for m in members],
+                                             adjustment_value=adjustment_value,
+                                             adjustment_raid_id=raid.id if is_raid else None,
+                                             adjustment_event_id=25 if not is_raid else None)
+
+        # Confirmations
+        if adjustment:
+            msg = LOG_ENTRY_FOR_ADJUSTMENT.format(reason=adjustment_reason,
+                                                  value=adjustment_value,
+                                                  members=', '.join([m.name for m in members]))
+            channel = ctx.bot.get_guild(self.bot.guild_id).get_channel(self.bot.dkp_log_id)
+            await channel.send(msg)
+            await ctx.send(f'Adjustment was successfully created')
+        else:
+            await ctx.send('Adjustment failed to create.  Please upload manually')
 
     @commands.command()
-    @commands.has_any_role('Admin', 'Raid Leader')
+    @commands.has_role('DKP')
     async def addcharacter(self, ctx, character=None):
         """Add a character to the eqdkp site"""
 
@@ -345,12 +393,15 @@ You have selected Raid #[{raid.id}][{raid.event_name}] on {raid.date}
     @addraid.before_invoke
     @addcharacter.before_invoke
     @additem.before_invoke
+    @addadjustment.before_invoke
     async def get_data(self, ctx):
         self.characters = eqdkp.get_characters()
 
     async def cog_command_error(self, ctx, error):
         if isinstance(error, commands.MissingRequiredArgument):
             await ctx.send(f'`Error: Missing Required Argument.  Please refer to !help {ctx.command.name}`')
+        if isinstance(error, asyncio.TimeoutError):
+            await ctx.send(f'`Error: Timeout.  You did not respond in time`')
 
 
 def setup(bot: commands.Bot):

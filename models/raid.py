@@ -30,7 +30,8 @@ class Raid:
             try:
                 msg = await ctx.bot.wait_for('message', check=check_author, timeout=30)
                 argument = msg.content
-                raids = eqdkp.get_raids(argument)
+                raids = eqdkp.get_raids()
+                raid = [raid for raid in raids if raid.id == argument]
             except Exception:
                 pass
 

@@ -7,7 +7,8 @@ import discord
 from discord.ext import commands
 
 bot = commands.Bot(command_prefix=commands.when_mentioned_or('!'),
-                   description='Amtrak EQ Discord Bot.')
+                   description='Amtrak EQ Discord Bot.',
+                   case_insensitive=True)
 
 
 # bot.remove_command('help')

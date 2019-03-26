@@ -49,6 +49,7 @@ Character = namedtuple('Character', ['id',
 def post(function, payload):
     params = {'format': 'json', 'function': function}
     response = requests.post(url=_API_URL, headers=_API_HEADERS, params=params, json=payload)
+    print(response.json())
     success = response.ok and response.status_code == 200
     if success:
         data = response.json()
@@ -109,10 +110,26 @@ def create_raid_item(item_date, item_buyers, item_value, item_name, item_raid_id
     return post(function='add_item', payload=payload)
 
 
-def create_adjustment():
+def create_adjustment(adjustment_date,
+                      adjustment_reason,
+                      adjustment_members,
+                      adjustment_value,
+                      adjustment_raid_id,
+                      adjustment_event_id):
     """This will create a raid adjustment on eqdkp"""
-    # TODO Implement
-    pass
+
+    payload = {
+        'adjustment_date': adjustment_date,
+        'adjustment_reason': adjustment_reason,
+        'adjustment_members': {'member': adjustment_members},
+        'adjustment_value': adjustment_value
+    }
+    if adjustment_raid_id:
+        payload['adjustment_raid_id'] = adjustment_raid_id
+    elif adjustment_event_id:
+        payload['adjustment_event_id'] = adjustment_event_id
+
+    return post(function='add_adjustment', payload=payload)
 
 
 def get_events():
