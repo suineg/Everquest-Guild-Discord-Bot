@@ -44,7 +44,6 @@ class RaidEvent:
 
         if event:
             event = event[0]
-            timeout = 20
             await ctx.send(f"""```md
 # Raid Event Selected
 
@@ -53,9 +52,9 @@ You have chosen raid [{event.id}][{event.name}] with a default value of [{event.
 > If this raid event is **incorrect** please type <cancel> now.
 
 1. Enter a new DKP amount now to override the default of {event.value}
-2. Otherwise, please wait {timeout} seconds to accept the default```""")
+```""")
             try:
-                msg = await ctx.bot.wait_for('message', check=check_author, timeout=timeout)
+                msg = await ctx.bot.wait_for('message', check=check_author, timeout=30)
                 answer = msg.content
                 if "cancel" in msg.content.lower():
                     return None

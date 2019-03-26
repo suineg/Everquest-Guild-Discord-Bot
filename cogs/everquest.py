@@ -1,4 +1,3 @@
-import asyncio
 from datetime import datetime
 
 import discord
@@ -51,8 +50,7 @@ class EverQuest(commands.Cog, name='everquest'):
         points = eqdkp.get_points(filters)
         chunks = [points[i:i + 10] for i in range(0, len(points), 10)]
         for chunk in chunks:
-            await ctx.author.send(f"""```
-{chunk}```""")
+            await ctx.author.send(f"""```\n{chunk}```""")
 
     @commands.command(aliases=['tweet', 'letsgo', 'wakeup'])
     @commands.has_any_role('Admin', 'Raid Leader')
@@ -72,23 +70,21 @@ class EverQuest(commands.Cog, name='everquest'):
         embed.set_image(url=gifs.get_one_gif("thomas the train"))
         embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
 
-        channel = ctx.bot.get_guild(self.bot.guild_id).get_channel(self.bot.batphone_id)
         await ctx.send(f'`Batphone sent: {status.text}`')
-        await channel.send(f'@everyone {status.text}', embed=embed)
+        await ctx.bot.batphone_channel.send(f'@everyone {status.text}', embed=embed)
 
     @commands.command()
+    @commands.cooldown(rate=1, per=10.0, type=commands.BucketType.guild)
     @commands.has_role('DKP')
     async def addraid(self, ctx, *, event: RaidEvent):
-        """Add a raid to the eqdkp site
+        """
+        Add a raid to the eqdkp site
 
          1. You need to attach a RaidRoster file along with this command.
          2. You can enter a part of an event name, or the event id in order to select it
-            __Please note: Because of this, make sure what you're entering is enough of a partial
-            to match the correct event you're looking for.__
 
-
-        :param event: Partial name of event, or ID
-        :return: EQDKP Raid
+            Please note: Because of this, make sure what you're entering is enough of a partial
+            to match the correct event you're looking for.
         """
 
         def check_author(m):
@@ -98,20 +94,16 @@ class EverQuest(commands.Cog, name='everquest'):
             return await ctx.send("`Error: A valid raid event is required.`")
 
         # Check for RaidRoster file
-        msg = None
-        if not ctx.message.attachments:
-            try:
-                await ctx.send("`It appears you forgot to attach a RaidRoster file.  Please do that now.`")
-                msg = await ctx.bot.wait_for('message', check=check_author, timeout=60)
-                if not msg.attachments or 'RaidRoster' not in msg.attachments[0].filename:
-                    raise InvalidRaidRosterFile
-            except InvalidRaidRosterFile:
-                return await ctx.send("Add raid cancelled: You did not upload a valid RaidRoster file.")
+        attachments = ctx.message.attachments
+        while not attachments:
+            await ctx.send("`It appears you forgot to attach a RaidRoster file.  Please do that now.`")
+            msg = await ctx.bot.wait_for('message', check=check_author, timeout=60)
+            attachments = msg.attachments
 
-        attachments = ctx.message.attachments or msg.attachments
-        raid_files = [file for file in attachments if 'RaidRoster' in file.filename]
+        if 'RaidRoster' not in attachments[0].filename:
+            raise InvalidRaidRosterFile
 
-        characters = eqdkp.get_characters()
+        raid_files = [file for file in attachments]
 
         async with ctx.typing():
             for file in raid_files:
@@ -146,7 +138,7 @@ class EverQuest(commands.Cog, name='everquest'):
                         msg = await ctx.bot.wait_for('message', check=check_author, timeout=60)
                         raiders_to_add = [add
                                           for add in msg.content.replace(' ', '').split(',')
-                                          if add.lower() not in [c.lower() for c in characters]]
+                                          if add.lower() not in [c.lower() for c in self.characters]]
                         raiders = raiders + raiders_to_add
                     except:
                         await ctx.send('No players added')
@@ -156,7 +148,7 @@ class EverQuest(commands.Cog, name='everquest'):
                 raiders_missing = [raider
                                    for raider in raiders
                                    if raider not in [character.name
-                                                     for character in characters]]
+                                                     for character in self.characters]]
 
                 if raiders_missing:
                     await ctx.send(f"""```md
@@ -176,7 +168,7 @@ The following [{len(raiders_missing)}][raiders] are not currently in EqDkp:
                         for raider in raiders_missing[:]:
                             new_character = eqdkp.create_character(raider)
                             if new_character:
-                                characters.append(new_character)
+                                self.characters.append(new_character)
                                 raiders_missing.remove(raider)
                             else:
                                 await ctx.send(f"Failed to create `{raider}`.  Please create manually and add to raid")
@@ -198,7 +190,7 @@ The following [{len(raiders_missing)}][raiders] are not currently in EqDkp:
                 # Create Raid Attendees List
 
                 raid_attendees = {c.id: c.name
-                                  for c in characters
+                                  for c in self.characters
                                   if c.name in raiders
                                   and c.name not in raiders_missing}
 
@@ -223,13 +215,13 @@ The following [{len(raiders_missing)}][raiders] are not currently in EqDkp:
                                                     date=raid_datetime.strftime('%m/%d/%Y').center(14),
                                                     attendees=', '.join(attendees_by_name))
 
-                    channel = ctx.bot.get_guild(self.bot.guild_id).get_channel(self.bot.dkp_log_id)
-                    await channel.send(msg)
+                    await ctx.bot.dkp_entry_log_channel.send(msg)
                     await ctx.send(f'Raid `ID: {raid["raid_id"]} EVENT: {event.name}` was successfully created')
                 else:
                     await ctx.send('Raid failed to create.  Please upload manually')
 
     @commands.command()
+    @commands.cooldown(rate=1, per=5.0, type=commands.BucketType.guild)
     @commands.has_role('DKP')
     async def additem(self, ctx, raid: Raid):
         """
@@ -246,72 +238,64 @@ The following [{len(raiders_missing)}][raiders] are not currently in EqDkp:
             return m.author == ctx.author
 
         if raid:
-            await ctx.send(f"""```md
-# Raid Found!
-
-You have selected Raid #[{raid.id}][{raid.event_name}] on {raid.date}
-
-> If this is the wrong raid, please enter <cancel> now
-
-1. Please enter the items from this raid in the following format: <Character> <DKP> <Item Name>
-2. When you are done entering items, enter <done>
-```""")
+            # Raid Found, ask user to start entering items
+            await ctx.send(RAID_FOUND.format(raid_id=raid.id,
+                                             raid_event_name=raid.event_name,
+                                             raid_date=raid.date))
             item_log = ''
-            try:
-                while True:
-                    msg = await ctx.bot.wait_for('message', check=check_author, timeout=30)
-                    response = msg.content.replace("<", "").replace(">", "")
+            while True:
+                # Wait for item entry: <Character> <DKP> <Item Name>
+                msg = await ctx.bot.wait_for('message', check=check_author, timeout=30)
+                response = msg.content.replace("<", "").replace(">", "")
 
-                    if "done" in response.lower():
-                        break
+                if "done" in response.lower():
+                    break
 
-                    if "cancel" in response.lower():
-                        return None
+                if "cancel" in response.lower():
+                    return None
 
-                    parts = response.split()
-                    if len(parts) < 3:
-                        await ctx.send(f'The following response `{msg.content}` was not valid.  Please try again.')
-                        continue
+                parts = response.split()
+                if len(parts) < 3:
+                    await ctx.send(f'The following response `{msg.content}` was not valid.  Please try again.')
+                    continue
 
-                    character_part = parts[0]
-                    item_value_part = parts[1]
-                    item_name_part = parts[2:]
+                character_part = parts[0]
+                item_value_part = parts[1]
+                item_name_part = parts[2:]
 
-                    # Validate the character
-                    character = [c for c in self.characters if c.name.lower() == character_part.lower()]
-                    if not character:
-                        await ctx.send(f'The following character `{character_part}` was not valid.  Please try again.')
-                        continue
-                    character = character[0]
+                # Validate the character
+                character = [c for c in self.characters if c.name.lower() == character_part.lower()]
+                if not character:
+                    await ctx.send(f'The following character `{character_part}` was not valid.  Please try again.')
+                    continue
+                character = character[0]
 
-                    # Validate the item value
-                    if not item_value_part.isnumeric():
-                        await ctx.send(f'The following dkp of `{item_value_part}` is not a number.  Please try again.')
-                        continue
-                    item_value = int(item_value_part)
+                # Validate the item value
+                if not item_value_part.isnumeric():
+                    await ctx.send(f'The following dkp of `{item_value_part}` is not a number.  Please try again.')
+                    continue
+                item_value = int(item_value_part)
 
-                    # TODO validate item_name
-                    item_name = ' '.join(item_name_part).capitalize()
+                # TODO validate item_name
+                item_name = ' '.join(item_name_part).capitalize()
 
-                    raid_item = eqdkp.create_raid_item(item_date=raid.date,
-                                                       item_name=item_name,
-                                                       item_raid_id=raid.id,
-                                                       item_value=item_value,
-                                                       item_buyers=[character.id])
-                    if raid_item:
-                        await ctx.send(
-                            f"`{item_name} was successfully charged to {character.name} for {item_value} dkp.  "
-                            f"Continue with the next item, or type done.`")
-                        item_log += f"> {item_name.ljust(30)}{character.name.ljust(20)}{str(item_value).rjust(5)} DKP\n"
+                raid_item = eqdkp.create_raid_item(item_date=raid.date,
+                                                   item_name=item_name,
+                                                   item_raid_id=raid.id,
+                                                   item_value=item_value,
+                                                   item_buyers=[character.id])
+                if raid_item:
+                    await ctx.send(
+                        f"`{item_name} was successfully charged to {character.name} for {item_value} dkp.  "
+                        f"Continue with the next item, or type done.`")
+                    item_log += f"> {item_name.ljust(30)}{character.name.ljust(20)}{str(item_value).rjust(5)} DKP\n"
 
-                    else:
-                        await ctx.send(f"`ERROR: {item_name} failed to get entered.  Please try again`")
+                else:
+                    await ctx.send(f"`ERROR: {item_name} failed to get entered.  Please try again`")
 
-            except Exception:
-                pass
-
+            # Find and edit the raid log in #dkp-entry-log channel
             async with ctx.typing():
-                channel = ctx.bot.get_guild(self.bot.guild_id).get_channel(self.bot.dkp_log_id)
+                channel = ctx.bot.dkp_entry_log_channel
                 messages = await channel.history(limit=50).flatten()
                 messages = [m for m in messages if f"# Raid Log Entry {raid.id}" in m.content]
                 if messages:
@@ -324,9 +308,10 @@ You have selected Raid #[{raid.id}][{raid.event_name}] on {raid.date}
                     return await ctx.send(f"`ERROR: I wasn't able to edit #{channel.name}.  Please do so manually.`")
 
     @commands.command()
+    @commands.cooldown(rate=1, per=5.0, type=commands.BucketType.guild)
     @commands.has_role('DKP')
     async def addadjustment(self, ctx, *, adjustment_reason: str):
-        """Not enabled yet"""
+        """Add an adjustment to the  DKP site"""
 
         now = datetime.datetime.now(tz=tz.gettz('EDT'))
 
@@ -365,23 +350,26 @@ You have selected Raid #[{raid.id}][{raid.event_name}] on {raid.date}
                                              adjustment_members=[m.id for m in members],
                                              adjustment_value=adjustment_value,
                                              adjustment_raid_id=raid.id if is_raid else None,
-                                             adjustment_event_id=25 if not is_raid else None)
+                                             adjustment_event_id=raid.event_id if is_raid else 25)
 
         # Confirmations
         if adjustment:
             msg = LOG_ENTRY_FOR_ADJUSTMENT.format(reason=adjustment_reason,
                                                   value=adjustment_value,
                                                   members=', '.join([m.name for m in members]))
-            channel = ctx.bot.get_guild(self.bot.guild_id).get_channel(self.bot.dkp_log_id)
-            await channel.send(msg)
+            await ctx.bot.dkp_entry_log_channel.send(msg)
             await ctx.send(f'Adjustment was successfully created')
         else:
             await ctx.send('Adjustment failed to create.  Please upload manually')
 
     @commands.command()
+    @commands.cooldown(rate=3, per=10.0, type=commands.BucketType.guild)
     @commands.has_role('DKP')
     async def addcharacter(self, ctx, character=None):
         """Add a character to the eqdkp site"""
+
+        if character.lower() in [c.lower() for c in self.characters]:
+            return await ctx.send(f"`ERROR: Duplicate Character` {character} is already added.")
 
         created_char = eqdkp.create_character(character.capitalize())
         if created_char:
@@ -399,9 +387,11 @@ You have selected Raid #[{raid.id}][{raid.event_name}] on {raid.date}
 
     async def cog_command_error(self, ctx, error):
         if isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send(f'`Error: Missing Required Argument.  Please refer to !help {ctx.command.name}`')
-        if isinstance(error, asyncio.TimeoutError):
-            await ctx.send(f'`Error: Timeout.  You did not respond in time`')
+            return await ctx.send(f'`Error: Missing Required Argument.`  Please refer to `!help {ctx.command.name}`')
+        if isinstance(error, commands.CommandInvokeError):
+            return await ctx.send(f'`Error: Timeout.`  You did not respond in time.')
+        if isinstance(error, InvalidRaidRosterFile):
+            return await ctx.send(f'`Error: InvalidFile.`  You did not upload a valid RaidRoster file.')
 
 
 def setup(bot: commands.Bot):

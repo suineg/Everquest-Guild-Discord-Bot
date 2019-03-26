@@ -42,3 +42,14 @@ ADJUSTMENT_RAID = """```md
 ADJUSTMENT_RAID_ID = """```md
 4. What raid would you like to apply this adjustment to?  Please enter the raid id:
 ```"""
+
+RAID_FOUND = """```md
+# Raid Found!
+
+You have selected Raid #[{raid_id}][{raid_event_name}] on {raid_date}
+
+> If this is the wrong raid, please enter <cancel> now
+
+1. Please enter the items from this raid in the following format: <Character> <DKP> <Item Name>
+2. When you are done entering items, enter <done>
+```"""

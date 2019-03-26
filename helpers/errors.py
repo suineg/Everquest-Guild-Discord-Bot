@@ -6,3 +6,7 @@ class Error(Exception):
 
 class InvalidRaidRosterFile(Error):
     pass
+
+
+class DuplicateCharacter(Error):
+    pass
