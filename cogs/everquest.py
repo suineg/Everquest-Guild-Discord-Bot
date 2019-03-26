@@ -36,7 +36,6 @@ class EverQuest(commands.Cog, name='everquest'):
 
     @commands.command(aliases=['standings'])
     @commands.cooldown(rate=3, per=10.0, type=commands.BucketType.user)
-    @commands.has_any_role('Member', 'Admin', 'Raid Leader', 'DKP')
     async def dkp(self, ctx, *, filters: to_kwargs = None):
         """
         Get standings directly from EQDKP.
