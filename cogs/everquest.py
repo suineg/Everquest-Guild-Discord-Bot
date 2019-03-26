@@ -17,6 +17,12 @@ class EverQuest(commands.Cog, name='everquest'):
         self.bot = bot
         self.characters = []
 
+    def has_any_channel(*channels):
+        async def predicate(ctx):
+            return ctx.channel.name in channels or ctx.channel.id in channels
+
+        return commands.check(predicate)
+
     @commands.command(aliases=['item', 'quest', 'mob', 'spell', 'recipe'])
     async def alla(self, ctx, *, query: str):
         """Find Eq Item on Allakhazam"""
@@ -73,10 +79,15 @@ class EverQuest(commands.Cog, name='everquest'):
         await ctx.send(f'`Batphone sent: {status.text}`')
         await ctx.bot.batphone_channel.send(f'@everyone {status.text}', embed=embed)
 
-    @commands.command()
+    @commands.group()
     @commands.cooldown(rate=1, per=10.0, type=commands.BucketType.guild)
     @commands.has_role('DKP')
-    async def addraid(self, ctx, *, event: RaidEvent):
+    @has_any_channel('dkp-entry')
+    async def add(self, ctx):
+        pass
+
+    @add.command()
+    async def raid(self, ctx, *, event: RaidEvent):
         """
         Add a raid to the eqdkp site
 
@@ -108,8 +119,7 @@ class EverQuest(commands.Cog, name='everquest'):
         async with ctx.typing():
             for file in raid_files:
 
-                # Download and parse the RaidRoster File
-
+                # Download and parse the RaidRoster File for attendees
                 await download_attachment(file.url)
                 with open(file.filename, 'r') as f:
                     content = f.readlines()
@@ -118,51 +128,29 @@ class EverQuest(commands.Cog, name='everquest'):
                 raid_datetime = datetime.datetime.strptime(datetime_str, '%Y%m%d %H%M%S')
                 raiders = [x.split('\t')[1] for x in content]
 
-                # Check for creditt additions
-
-                await ctx.send(f"""```md
-# CREDITT additions
-
-1. Would you like to add any players to this dump? [Yes/No, default=Yes]```""")
-                try:
-                    msg = await ctx.bot.wait_for('message', check=check_author, timeout=20)
-                    creditt = False if "no" in msg.content.lower() else True
-                except Exception:
-                    creditt = True
+                # Manually add attendees to the dump from "creditt" tells
+                await ctx.send(ADD_RAID_CREDITT)
+                msg = await ctx.bot.wait_for('message', check=check_author, timeout=60)
+                creditt = False if "no" in msg.content.lower() else True
 
                 if creditt:
-                    await ctx.send(f"""```md
-2. Please enter a comma separated list of players you would like to add:
-> Example: Player1,Player2,Player3```""")
-                    try:
-                        msg = await ctx.bot.wait_for('message', check=check_author, timeout=60)
-                        raiders_to_add = [add
-                                          for add in msg.content.replace(' ', '').split(',')
-                                          if add.lower() not in [c.lower() for c in self.characters]]
-                        raiders = raiders + raiders_to_add
-                    except:
-                        await ctx.send('No players added')
+                    await ctx.send(ADD_RAID_CREDITT_MEMBERS)
+                    msg = await ctx.bot.wait_for('message', check=check_author, timeout=60)
+                    raiders_to_add = [add.capitalize()
+                                      for add in msg.content.replace(' ', '').split(',')
+                                      if add.capitalize() not in raiders]
+                    raiders = raiders + raiders_to_add
 
-                # Check for players not in eqdkp
-
+                # Check for attendees not in eqdkp
                 raiders_missing = [raider
                                    for raider in raiders
                                    if raider not in [character.name
                                                      for character in self.characters]]
-
                 if raiders_missing:
-                    await ctx.send(f"""```md
-# Missing Players
-
-The following [{len(raiders_missing)}][raiders] are not currently in EqDkp:
-{', '.join(raiders_missing)}
-
-1. Would you like to add them to eqdkp & raid? [Yes/No, default=Yes]```""")
-                    try:
-                        msg = await ctx.bot.wait_for('message', check=check_author, timeout=20)
-                        add_raiders = False if "no" in msg.content.lower() else True
-                    except Exception:
-                        add_raiders = True
+                    await ctx.send(ADD_RAID_MISSING_MEMBERS.format(count=len(raiders_missing),
+                                                                   member_list=', '.join(raiders_missing)))
+                    msg = await ctx.bot.wait_for('message', check=check_author, timeout=60)
+                    add_raiders = False if "no" in msg.content.lower() else True
 
                     if add_raiders:
                         for raider in raiders_missing[:]:
@@ -174,28 +162,20 @@ The following [{len(raiders_missing)}][raiders] are not currently in EqDkp:
                                 await ctx.send(f"Failed to create `{raider}`.  Please create manually and add to raid")
 
                 # Add a raid note
-
-                await ctx.send(f"""```md
-# Raid Note
-
-> If you don't enter anything, the note will be set to {event.name}
-
-1. Please enter a note for this raid:```""")
+                await ctx.send(ADD_RAID_NOTE.format(event_name=event.name))
                 try:
                     msg = await ctx.bot.wait_for('message', check=check_author, timeout=20)
                     note = msg.content.upper()
                 except Exception:
-                    note = None
+                    note = event.name
 
                 # Create Raid Attendees List
-
                 raid_attendees = {c.id: c.name
                                   for c in self.characters
                                   if c.name in raiders
                                   and c.name not in raiders_missing}
 
                 # Create the raid
-
                 raid = eqdkp.create_raid(raid_datetime.strftime('%Y-%m-%d %H:%M'),
                                          [cid for cid, cname in raid_attendees.items()],
                                          event.value,
@@ -220,10 +200,8 @@ The following [{len(raiders_missing)}][raiders] are not currently in EqDkp:
                 else:
                     await ctx.send('Raid failed to create.  Please upload manually')
 
-    @commands.command()
-    @commands.cooldown(rate=1, per=5.0, type=commands.BucketType.guild)
-    @commands.has_role('DKP')
-    async def additem(self, ctx, raid: Raid):
+    @add.command()
+    async def item(self, ctx, raid: Raid):
         """
         Add an item to an EQDKP raid
 
@@ -307,10 +285,8 @@ The following [{len(raiders_missing)}][raiders] are not currently in EqDkp:
                 else:
                     return await ctx.send(f"`ERROR: I wasn't able to edit #{channel.name}.  Please do so manually.`")
 
-    @commands.command()
-    @commands.cooldown(rate=1, per=5.0, type=commands.BucketType.guild)
-    @commands.has_role('DKP')
-    async def addadjustment(self, ctx, *, adjustment_reason: str):
+    @add.command(aliases=['adj'])
+    async def adjustment(self, ctx, *, adjustment_reason: str):
         """Add an adjustment to the  DKP site"""
 
         now = datetime.datetime.now(tz=tz.gettz('EDT'))
@@ -362,10 +338,8 @@ The following [{len(raiders_missing)}][raiders] are not currently in EqDkp:
         else:
             await ctx.send('Adjustment failed to create.  Please upload manually')
 
-    @commands.command()
-    @commands.cooldown(rate=3, per=10.0, type=commands.BucketType.guild)
-    @commands.has_role('DKP')
-    async def addcharacter(self, ctx, character=None):
+    @add.command(aliases=['char'])
+    async def character(self, ctx, character=None):
         """Add a character to the eqdkp site"""
 
         if character.lower() in [c.lower() for c in self.characters]:
@@ -378,10 +352,7 @@ The following [{len(raiders_missing)}][raiders] are not currently in EqDkp:
         else:
             await ctx.send(f"Failed to create {character}.  Please try again later, or create them manually.")
 
-    @addraid.before_invoke
-    @addcharacter.before_invoke
-    @additem.before_invoke
-    @addadjustment.before_invoke
+    @add.before_invoke
     async def get_data(self, ctx):
         self.characters = eqdkp.get_characters()
 

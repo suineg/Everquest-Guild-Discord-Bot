@@ -53,3 +53,25 @@ You have selected Raid #[{raid_id}][{raid_event_name}] on {raid_date}
 1. Please enter the items from this raid in the following format: <Character> <DKP> <Item Name>
 2. When you are done entering items, enter <done>
 ```"""
+
+ADD_RAID_CREDITT = """```md
+# CREDITT additions
+
+1. Would you like to add any players to this dump? [Yes|No]```"""
+
+ADD_RAID_CREDITT_MEMBERS = """```md
+2. Please enter a comma separated list of players you would like to add:
+> Example: Player1,Player2,Player3```"""
+
+ADD_RAID_MISSING_MEMBERS = """```md
+# Missing Players
+
+The following [{count}][raiders] are not currently in EqDkp:
+{member_list}
+
+1. Would you like to add them to eqdkp & raid? [Yes|No]```"""
+
+ADD_RAID_NOTE = """```md
+# Raid Note
+
+1. Please enter a note for this raid:```"""
