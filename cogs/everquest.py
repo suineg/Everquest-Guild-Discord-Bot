@@ -280,7 +280,7 @@ class EverQuest(commands.Cog, name='everquest'):
                 async with ctx.typing():
                     channel = ctx.bot.dkp_entry_log_channel
                     messages = await channel.history(limit=50).flatten()
-                    messages = [m for m in messages if f"# Raid Log Entry [{raid.id}]" in m.content]
+                    messages = [m for m in messages if f"# Raid Entry Log [{raid.id}]" in m.content]
                     if messages:
                         message = messages[0]
                         items_purchased = f"""\n\n* Items Purchased\n{item_log}```"""
