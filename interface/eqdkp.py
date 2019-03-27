@@ -49,7 +49,6 @@ Character = namedtuple('Character', ['id',
 def post(function, payload):
     params = {'format': 'json', 'function': function}
     response = requests.post(url=_API_URL, headers=_API_HEADERS, params=params, json=payload)
-    print(response.json())
     success = response.ok and response.status_code == 200
     if success:
         data = response.json()
