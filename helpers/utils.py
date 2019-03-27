@@ -4,7 +4,7 @@ import re
 
 import aiohttp
 import async_timeout
-from dateutil import tz
+import pytz
 
 
 def to_kwargs(arg_list_string):
@@ -36,8 +36,8 @@ def add_est_timestamp(string):
     if not string:
         return None
 
-    est = tz.gettz('EDT')
-    now = datetime.datetime.now(tz=est).strftime("%I:%M %p")
+    est = pytz.timezone('US/Eastern')
+    now = est.localize(datetime.datetime.now()).strftime("%I:%M %p")
     now = now[1:] if now[0] == "0" else now
     return f'{string} ({now})'
 
