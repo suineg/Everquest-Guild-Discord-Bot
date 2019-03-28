@@ -295,14 +295,15 @@ class EverQuest(commands.Cog, name='everquest'):
     async def adjustment(self, ctx, *, adjustment_reason: str):
         """Add an adjustment to the  DKP site"""
 
-        now = datetime.datetime.now(tz=tz.gettz('EDT'))
+        est = pytz.timezone('US/Eastern')
+        now = datetime.datetime.now(est)
 
         def check_author(m):
             return m.author == ctx.author
 
         # Get value of the adjustment
         await ctx.send(ADJUSTMENT_VALUE.format(reason=adjustment_reason))
-        msg = await ctx.bot.wait_for('message', check=check_author, timeout=20)
+        msg = await ctx.bot.wait_for('message', check=check_author, timeout=60)
         try:
             adjustment_value = float(msg.content)
         except ValueError:
@@ -316,14 +317,14 @@ class EverQuest(commands.Cog, name='everquest'):
 
         # Ask if the adjustment should be applied to a raid
         await ctx.send(ADJUSTMENT_RAID)
-        msg = await ctx.bot.wait_for('message', check=check_author, timeout=30)
+        msg = await ctx.bot.wait_for('message', check=check_author, timeout=60)
         is_raid = True if "yes" in msg.content.lower() else False
 
         # Get the raid data if a Yes was answered above
         raid = None
         if is_raid:
             await ctx.send(ADJUSTMENT_RAID_ID)
-            msg = await ctx.bot.wait_for('message', check=check_author, timeout=30)
+            msg = await ctx.bot.wait_for('message', check=check_author, timeout=60)
             raid = await Raid.convert(ctx, int(msg.content))
 
         # Create the adjustment

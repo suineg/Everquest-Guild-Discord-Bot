@@ -37,7 +37,7 @@ def add_est_timestamp(string):
         return None
 
     est = pytz.timezone('US/Eastern')
-    now = est.localize(datetime.datetime.now()).strftime("%I:%M %p")
+    now = datetime.datetime.now(est).strftime("%I:%M %p")
     now = now[1:] if now[0] == "0" else now
     return f'{string} ({now})'
 
