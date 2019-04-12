@@ -80,7 +80,7 @@ class EverQuest(commands.Cog, name='everquest'):
         await ctx.bot.batphone_channel.send(f'@everyone {status.text}', embed=embed)
 
     @commands.group()
-    @commands.cooldown(rate=1, per=5.0, type=commands.BucketType.guild)
+    @commands.cooldown(rate=1, per=2.0, type=commands.BucketType.guild)
     @commands.has_role('DKP')
     @has_any_channel('dkp-entry')
     async def add(self, ctx):
@@ -208,7 +208,7 @@ class EverQuest(commands.Cog, name='everquest'):
         Please enter a valid raid id for the <raid> parameter.
 
         Where is the raid id?
-        - It's posted in the Raid Confirmation message from me after !addraid
+        - It's posted in the Raid Confirmation message from me after !add raid
         - It's available in the URL of the raid.  It's the r number right before the '.html'
         """
 

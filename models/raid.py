@@ -29,8 +29,7 @@ class Raid:
             await ctx.send(f'`Raid id #{argument} seems to be invalid.  Please enter the correct id:`')
             try:
                 msg = await ctx.bot.wait_for('message', check=check_author, timeout=30)
-                argument = msg.content
-                raids = eqdkp.get_raids()
+                argument = int(msg.content)
                 raid = [raid for raid in raids if raid.id == argument]
             except Exception:
                 pass
