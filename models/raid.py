@@ -22,7 +22,7 @@ class Raid:
         def check_author(m):
             return m.author == ctx.author
 
-        raids = eqdkp.get_raids()
+        raids = eqdkp.get_raids(n=10)
         raid = [raid for raid in raids if raid.id == argument]
 
         if not raid:
