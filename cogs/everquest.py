@@ -76,8 +76,8 @@ class EverQuest(commands.Cog, name='everquest'):
         embed.set_image(url=gifs.get_one_gif("thomas the train"))
         embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
 
-        await ctx.message.delete()
         await ctx.bot.batphone_channel.send(f'@everyone {status.text}', embed=embed)
+        await ctx.message.delete()
 
     @commands.group()
     @commands.cooldown(rate=1, per=2.0, type=commands.BucketType.guild)
